@@ -93,6 +93,20 @@ extension RileyLinkDevice {
         manager.setCustomName(name)
     }
     
+    public func getBatterylevel() -> String {
+        do {
+            return try manager.readBatteryLevel(timeout: 1)
+        } catch {}
+        return ""
+    }
+    
+    public func orangeAction(mode: Int) {
+        do {
+            try manager.orangeAction(mode: RileyLinkOrangeMode(rawValue: UInt8(mode))!)
+        } catch {}
+    }
+    
+    
     public func enableBLELEDs() {
         manager.setLEDMode(mode: .on)
     }
@@ -348,6 +362,8 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
 
             assertIdleListening(forceRestart: false)
         case .customName?, .firmwareVersion?, .ledMode?, .none:
+            break
+        case .some(.action):
             break
         }
     }

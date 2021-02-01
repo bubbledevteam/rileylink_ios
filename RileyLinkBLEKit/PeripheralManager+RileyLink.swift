@@ -19,6 +19,8 @@ extension CBUUIDRawValue where RawValue == String {
 
 enum RileyLinkServiceUUID: String, CBUUIDRawValue {
     case main = "0235733B-99C5-4197-B856-69219C2A3845"
+    case battery = "180F"
+    case orange = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
 }
 
 enum MainServiceCharacteristicUUID: String, CBUUIDRawValue {
@@ -28,6 +30,23 @@ enum MainServiceCharacteristicUUID: String, CBUUIDRawValue {
     case timerTick       = "6E6C7910-B89E-43A5-78AF-50C5E2B86F7E"
     case firmwareVersion = "30D99DC9-7C91-4295-A051-0A104D238CF2"
     case ledMode         = "C6D84241-F1A7-4F9C-A25F-FCE16732F14E"
+    case action          = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+}
+
+enum BatteryServiceCharacteristicUUID: String, CBUUIDRawValue {
+    case battery_level   = "2A19"
+}
+
+enum OrangeServiceCharacteristicUUID: String, CBUUIDRawValue {
+    case setting   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+}
+
+enum RileyLinkOrangeMode: UInt8 {
+    case yellow  = 0x1
+    case red   = 0x2
+    case off = 0x3
+    case shake = 0x4
+    case shakeOff = 0x5
 }
 
 enum RileyLinkLEDMode: UInt8 {
@@ -48,6 +67,12 @@ extension PeripheralManager.Configuration {
                     MainServiceCharacteristicUUID.timerTick.cbUUID,
                     MainServiceCharacteristicUUID.firmwareVersion.cbUUID,
                     MainServiceCharacteristicUUID.ledMode.cbUUID
+                ],
+                RileyLinkServiceUUID.battery.cbUUID: [
+                    BatteryServiceCharacteristicUUID.battery_level.cbUUID
+                ],
+                RileyLinkServiceUUID.orange.cbUUID: [
+                    OrangeServiceCharacteristicUUID.setting.cbUUID
                 ]
             ],
             notifyingCharacteristics: [
@@ -70,6 +95,27 @@ extension PeripheralManager.Configuration {
         )
     }
 }
+
+fileprivate extension CBPeripheral {
+    func getBatteryCharacteristic(_ uuid: BatteryServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .battery) -> CBCharacteristic? {
+        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
+            return nil
+        }
+
+        return service.characteristics?.itemWithUUID(uuid.cbUUID)
+    }
+}
+
+fileprivate extension CBPeripheral {
+    func getOrangeCharacteristic(_ uuid: OrangeServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .orange) -> CBCharacteristic? {
+        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
+            return nil
+        }
+
+        return service.characteristics?.itemWithUUID(uuid.cbUUID)
+    }
+}
+
 
 
 fileprivate extension CBPeripheral {
@@ -295,6 +341,41 @@ extension PeripheralManager {
 
 // MARK: - Lower-level helper operations
 extension PeripheralManager {
+    
+    
+    func readBatteryLevel(timeout: TimeInterval) throws -> String {
+        guard let characteristic = peripheral.getBatteryCharacteristic(.battery_level) else {
+            throw RileyLinkDeviceError.peripheralManagerError(.unknownCharacteristic)
+        }
+        
+        do {
+            guard let data = try readValue(for: characteristic, timeout: timeout) else {
+                // TODO: This is an "unknown value" issue, not a timeout
+                throw RileyLinkDeviceError.peripheralManagerError(.timeout)
+            }
+            
+            let battery_level = "\(data[0])"
+            
+            return battery_level
+        } catch let error as PeripheralManagerError {
+            throw RileyLinkDeviceError.peripheralManagerError(error)
+        }
+    }
+    
+    func orangeAction(mode: RileyLinkOrangeMode) throws {
+        perform { (manager) in
+            do {
+                guard let characteristic = manager.peripheral.getCharacteristicWithUUID(.ledMode) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xbb, mode.rawValue])
+                try manager.writeValue(value, for: characteristic, type: .withResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (let error) {
+                assertionFailure(String(describing: error))
+            }
+        }
+    }
+
 
     /// Writes command data expecting a single response
     ///
