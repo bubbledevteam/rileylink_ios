@@ -30,7 +30,6 @@ enum MainServiceCharacteristicUUID: String, CBUUIDRawValue {
     case timerTick       = "6E6C7910-B89E-43A5-78AF-50C5E2B86F7E"
     case firmwareVersion = "30D99DC9-7C91-4295-A051-0A104D238CF2"
     case ledMode         = "C6D84241-F1A7-4F9C-A25F-FCE16732F14E"
-    case action          = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
 }
 
 enum BatteryServiceCharacteristicUUID: String, CBUUIDRawValue {
@@ -38,8 +37,11 @@ enum BatteryServiceCharacteristicUUID: String, CBUUIDRawValue {
 }
 
 enum OrangeServiceCharacteristicUUID: String, CBUUIDRawValue {
-    case setting   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+    case orange   = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
+    case orangeNotif   = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
 }
+
+
 
 enum RileyLinkOrangeMode: UInt8 {
     case yellow  = 0x1
@@ -72,7 +74,8 @@ extension PeripheralManager.Configuration {
                     BatteryServiceCharacteristicUUID.battery_level.cbUUID
                 ],
                 RileyLinkServiceUUID.orange.cbUUID: [
-                    OrangeServiceCharacteristicUUID.setting.cbUUID
+                    OrangeServiceCharacteristicUUID.orange.cbUUID,
+                    OrangeServiceCharacteristicUUID.orangeNotif.cbUUID
                 ]
             ],
             notifyingCharacteristics: [
@@ -365,11 +368,25 @@ extension PeripheralManager {
     func orangeAction(mode: RileyLinkOrangeMode) throws {
         perform { (manager) in
             do {
-                guard let characteristic = manager.peripheral.getCharacteristicWithUUID(.ledMode) else {
+                guard let characteristic = manager.peripheral.getOrangeCharacteristic(.orange) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
                 let value = Data([0xbb, mode.rawValue])
-                try manager.writeValue(value, for: characteristic, type: .withResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+                try manager.writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (let error) {
+                assertionFailure(String(describing: error))
+            }
+        }
+    }
+    
+    func orangeWritePwd() throws {
+        perform { (manager) in
+            do {
+                guard let characteristic = manager.peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xaa])
+                try manager.writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
             } catch (let error) {
                 assertionFailure(String(describing: error))
             }

@@ -106,6 +106,12 @@ extension RileyLinkDevice {
         } catch {}
     }
     
+    public func orangeWritePwd() {
+        do {
+            try manager.orangeWritePwd()
+        } catch {}
+    }
+    
     
     public func enableBLELEDs() {
         manager.setLEDMode(mode: .on)
@@ -309,6 +315,15 @@ extension RileyLinkDevice {
 
 
 extension RileyLinkDevice: PeripheralManagerDelegate {
+    func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
+        switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
+        case .orange, .orangeNotif:
+            orangeWritePwd()
+        default:
+            break
+        }
+    }
+    
     // This is called from the central's queue
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
         log.debug("Did UpdateValueFor %@", characteristic)
@@ -362,8 +377,6 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
 
             assertIdleListening(forceRestart: false)
         case .customName?, .firmwareVersion?, .ledMode?, .none:
-            break
-        case .some(.action):
             break
         }
     }
