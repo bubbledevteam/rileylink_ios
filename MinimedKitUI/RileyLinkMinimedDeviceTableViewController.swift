@@ -62,6 +62,17 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             cellForRow(.uptime)?.setDetailAge(uptime)
         }
     }
+    
+    private var battery: String? {
+        didSet {
+            guard isViewLoaded else {
+                return
+            }
+            
+            cellForRow(.battery)?.setDetailBatteryLevel(battery)
+        }
+    }
+
 
     private var lastIdle: Date? {
         didSet {
@@ -117,7 +128,25 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             } catch { }
         }
     }
-
+    
+    func updateBatteryLevel() {
+        device.runSession(withName: "Get battery level") { (session) in
+            do {
+                let batteryLevel = try self.device.getBatterylevel()
+                DispatchQueue.main.async {
+                    self.battery = batteryLevel
+                }
+            } catch {
+            }
+        }
+    }
+    
+    func orangeAction(index: Int) {
+        device.runSession(withName: "Orange Action \(index)") { (session) in
+            self.device.orangeAction(mode: index)
+        }
+    }
+    
     private func updateDeviceStatus() {
         device.getStatus { (status) in
             DispatchQueue.main.async {
@@ -185,6 +214,8 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         updateRSSI()
         
         updateUptime()
+        
+        updateBatteryLevel()
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -238,6 +269,12 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case connection
         case uptime
         case idleStatus
+        case battery
+        case yellow
+        case red
+        case off
+        case shake
+        case shakeOff
     }
 
     private enum PumpRow: Int, CaseCountable {
@@ -321,6 +358,19 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             case .idleStatus:
                 cell.textLabel?.text = LocalizedString("On Idle", comment: "The title of the cell showing the last idle")
                 cell.setDetailDate(lastIdle, formatter: dateFormatter)
+            case .battery:
+                cell.textLabel?.text = NSLocalizedString("Battery Level", comment: "The title of the cell showing battery level")
+                cell.setDetailBatteryLevel(battery)
+            case .yellow:
+                cell.textLabel?.text = NSLocalizedString("点亮黄灯", comment: "The title of the cell showing 点亮黄灯")
+            case .red:
+                cell.textLabel?.text = NSLocalizedString("点亮红灯", comment: "The title of the cell showing 点亮红灯")
+            case .off:
+                cell.textLabel?.text = NSLocalizedString("灭灯", comment: "The title of the cell showing 灭灯")
+            case .shake:
+                cell.textLabel?.text = NSLocalizedString("开始震动马达", comment: "The title of the cell showing 开始震动马达")
+            case .shakeOff:
+                cell.textLabel?.text = NSLocalizedString("停止震动马达", comment: "The title of the cell showing 停止震动马达")
             }
         case .pump:
             switch PumpRow(rawValue: indexPath.row)! {
@@ -434,6 +484,11 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
+            case .yellow: orangeAction(index: 1)
+            case .red: orangeAction(index: 2)
+            case .off: orangeAction(index: 3)
+            case .shake: orangeAction(index: 4)
+            case .shakeOff: orangeAction(index: 5)
             default:
                 break
             }
@@ -516,6 +571,16 @@ private extension TimeInterval {
 
 
 private extension UITableViewCell {
+    
+    func setDetailBatteryLevel(_ batteryLevel: String?) {
+        if let unwrappedBatteryLevel = batteryLevel {
+            detailTextLabel?.text = unwrappedBatteryLevel + " %"
+        } else {
+            detailTextLabel?.text = ""
+        }
+    }
+    
+    
     func setDetailDate(_ date: Date?, formatter: DateFormatter) {
         if let date = date {
             detailTextLabel?.text = formatter.string(from: date)

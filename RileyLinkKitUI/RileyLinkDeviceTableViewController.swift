@@ -42,6 +42,17 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
     
+    private var battery: String? {
+        didSet {
+            guard isViewLoaded else {
+                return
+            }
+            
+            cellForRow(.battery)?.setDetailBatteryLevel(battery)
+        }
+    }
+    
+    
     private var frequency: Measurement<UnitFrequency>? {
         didSet {
             guard isViewLoaded else {
@@ -114,6 +125,26 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
     
+    func updateBatteryLevel() {
+        device.runSession(withName: "Get battery level") { (session) in
+            do {
+                let batteryLevel = try self.device.getBatterylevel()
+                DispatchQueue.main.async {
+                    self.battery = batteryLevel
+                }
+            } catch let error {
+                self.log.error("Failed to get battery level: %{public}@", String(describing: error))
+            }
+        }
+    }
+
+    func orangeAction(index: Int) {
+        device.runSession(withName: "Orange Action \(index)") { (session) in
+            self.device.orangeAction(mode: index)
+        }
+    }
+
+    
     func updateFrequency() {
 
         device.runSession(withName: "Get base frequency") { (session) in
@@ -185,6 +216,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
 
         updateUptime()
         
+        updateBatteryLevel()
+        
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -237,6 +270,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case connection
         case uptime
         case frequency
+        case battery
+        case yellow
+        case red
+        case off
+        case shake
+        case shakeOff
     }
 
     private func cellForRow(_ row: DeviceRow) -> UITableViewCell? {
@@ -289,6 +328,19 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .frequency:
                 cell.textLabel?.text = LocalizedString("Frequency", comment: "The title of the cell showing current rileylink frequency")
                 cell.setDetailFrequency(frequency, formatter: frequencyFormatter)
+            case .battery:
+                cell.textLabel?.text = NSLocalizedString("Battery level", comment: "The title of the cell showing battery level")
+                cell.setDetailBatteryLevel(battery)
+            case .yellow:
+                cell.textLabel?.text = NSLocalizedString("点亮黄灯", comment: "The title of the cell showing 点亮黄灯")
+            case .red:
+                cell.textLabel?.text = NSLocalizedString("点亮红灯", comment: "The title of the cell showing 点亮红灯")
+            case .off:
+                cell.textLabel?.text = NSLocalizedString("灭灯", comment: "The title of the cell showing 灭灯")
+            case .shake:
+                cell.textLabel?.text = NSLocalizedString("开始震动马达", comment: "The title of the cell showing 开始震动马达")
+            case .shakeOff:
+                cell.textLabel?.text = NSLocalizedString("停止震动马达", comment: "The title of the cell showing 停止震动马达")
             }
         case .commands:
             cell.accessoryType = .disclosureIndicator
@@ -337,6 +389,11 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
+            case .yellow: orangeAction(index: 1)
+            case .red: orangeAction(index: 2)
+            case .off: orangeAction(index: 3)
+            case .shake: orangeAction(index: 4)
+            case .shakeOff: orangeAction(index: 5)
             default:
                 break
             }
@@ -397,6 +454,14 @@ private extension UITableViewCell {
     func setDetailAge(_ age: TimeInterval?) {
         if let age = age {
             detailTextLabel?.text = age.format(using: [.day, .hour, .minute])
+        } else {
+            detailTextLabel?.text = ""
+        }
+    }
+    
+    func setDetailBatteryLevel(_ batteryLevel: String?) {
+        if let unwrappedBatteryLevel = batteryLevel {
+            detailTextLabel?.text = unwrappedBatteryLevel + " %"
         } else {
             detailTextLabel?.text = ""
         }

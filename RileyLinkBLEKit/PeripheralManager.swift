@@ -95,6 +95,8 @@ extension PeripheralManager {
 
 protocol PeripheralManagerDelegate: class {
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic)
+    
+    func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic)
 
     func peripheralManager(_ manager: PeripheralManager, didReadRSSI RSSI: NSNumber, error: Error?)
 
@@ -374,6 +376,7 @@ extension PeripheralManager: CBPeripheralDelegate {
         }
 
         commandLock.unlock()
+        delegate?.peripheralManager(self, didUpdateNotificationStateFor: characteristic)
     }
 
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {

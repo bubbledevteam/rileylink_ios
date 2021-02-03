@@ -93,6 +93,25 @@ extension RileyLinkDevice {
         manager.setCustomName(name)
     }
     
+    public func getBatterylevel() -> String {
+        do {
+            return try manager.readBatteryLevel(timeout: 1)
+        } catch {}
+        return ""
+    }
+    
+    public func orangeAction(mode: Int) {
+        do {
+            try manager.orangeAction(mode: RileyLinkOrangeMode(rawValue: UInt8(mode))!)
+        } catch {}
+    }
+    
+    public func orangeWritePwd() {
+        do {
+            try manager.orangeWritePwd()
+        } catch {}
+    }
+    
     public func enableBLELEDs() {
         manager.setLEDMode(mode: .on)
     }
@@ -295,6 +314,16 @@ extension RileyLinkDevice {
 
 
 extension RileyLinkDevice: PeripheralManagerDelegate {
+    func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
+        switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
+        case .orange, .orangeNotif:
+            orangeWritePwd()
+        default:
+            break
+        }
+        log.debug("Did didUpdateNotificationStateFor %@", characteristic)
+    }
+    
     // This is called from the central's queue
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
         log.debug("Did UpdateValueFor %@", characteristic)
@@ -348,6 +377,14 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
 
             assertIdleListening(forceRestart: false)
         case .customName?, .firmwareVersion?, .ledMode?, .none:
+            break
+        }
+        
+        switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
+        case .orange:
+            self.log.error("orange response: %@", characteristic.value?.hexadecimalString ?? "")
+            break
+        default:
             break
         }
     }
