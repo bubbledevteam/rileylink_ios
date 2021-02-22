@@ -492,7 +492,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 break
             }
         case .commands:
-            let vc: CommandResponseViewController
+            var vc: CommandResponseViewController?
 
             switch CommandRow(rawValue: indexPath.row)! {
             case .tune:
@@ -527,10 +527,12 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             }
 
             if let cell = tableView.cellForRow(at: indexPath) {
-                vc.title = cell.textLabel?.text
+                vc?.title = cell.textLabel?.text
             }
 
-            show(vc, sender: indexPath)
+            if let vc = vc {
+                show(vc, sender: indexPath)
+            }
         case .pump:
             break
         }
