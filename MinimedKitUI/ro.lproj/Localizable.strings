@@ -208,3 +208,8 @@
 /* The title of the cell showing uptime */
 "Uptime" = "Timp în funcțiune";
 
+"Lighten Yellow LED" = "Lighten Yellow LED";
+"Lighten Red LED" = "Lighten Red LED";
+"Turn Off LED" = "Turn Off LED";
+"Test Vibrator" = "Test Vibrator";
+"Stop Vibrator" = "Stop Vibrator";

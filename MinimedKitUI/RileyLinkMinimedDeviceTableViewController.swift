@@ -270,11 +270,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case uptime
         case idleStatus
         case battery
-        case yellow
-        case red
-        case off
-        case shake
-        case shakeOff
+        case orl
     }
 
     private enum PumpRow: Int, CaseCountable {
@@ -296,6 +292,11 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case enableLED
         case discoverCommands
         case getStatistics
+        case yellow
+        case red
+        case off
+        case shake
+        case shakeOff
     }
 
     private func cellForRow(_ row: DeviceRow) -> UITableViewCell? {
@@ -361,16 +362,9 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             case .battery:
                 cell.textLabel?.text = NSLocalizedString("Battery Level", comment: "The title of the cell showing battery level")
                 cell.setDetailBatteryLevel(battery)
-            case .yellow:
-                cell.textLabel?.text = NSLocalizedString("点亮黄灯", comment: "The title of the cell showing 点亮黄灯")
-            case .red:
-                cell.textLabel?.text = NSLocalizedString("点亮红灯", comment: "The title of the cell showing 点亮红灯")
-            case .off:
-                cell.textLabel?.text = NSLocalizedString("灭灯", comment: "The title of the cell showing 灭灯")
-            case .shake:
-                cell.textLabel?.text = NSLocalizedString("开始震动马达", comment: "The title of the cell showing 开始震动马达")
-            case .shakeOff:
-                cell.textLabel?.text = NSLocalizedString("停止震动马达", comment: "The title of the cell showing 停止震动马达")
+            case .orl:
+                cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = "FW/HW"
             }
         case .pump:
             switch PumpRow(rawValue: indexPath.row)! {
@@ -435,6 +429,16 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 
             case .getStatistics:
                 cell.textLabel?.text = LocalizedString("RileyLink Statistics", comment: "The title of the command to fetch RileyLink statistics")
+            case .yellow:
+                cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
+            case .red:
+                cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
+            case .off:
+                cell.textLabel?.text = NSLocalizedString("Turn Off LED", comment: "The title of the cell showing Turn Off LED")
+            case .shake:
+                cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
+            case .shakeOff:
+                cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }
         }
 
@@ -484,11 +488,6 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
-            case .yellow: orangeAction(index: 1)
-            case .red: orangeAction(index: 2)
-            case .off: orangeAction(index: 3)
-            case .shake: orangeAction(index: 4)
-            case .shakeOff: orangeAction(index: 5)
             default:
                 break
             }
@@ -520,6 +519,11 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 vc = .discoverCommands(ops: ops, device: device)
             case .getStatistics:
                 vc = .getStatistics(ops: ops, device: device)
+            case .yellow: orangeAction(index: 1)
+            case .red: orangeAction(index: 2)
+            case .off: orangeAction(index: 3)
+            case .shake: orangeAction(index: 4)
+            case .shakeOff: orangeAction(index: 5)
             }
 
             if let cell = tableView.cellForRow(at: indexPath) {

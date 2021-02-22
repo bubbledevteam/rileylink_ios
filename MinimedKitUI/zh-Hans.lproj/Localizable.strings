@@ -207,3 +207,9 @@
 
 /* The title of the cell showing uptime */
 "Uptime" = "Uptime";
+
+"Lighten Yellow LED" = "点亮黄灯";
+"Lighten Red LED" = "点亮红灯";
+"Turn Off LED" = "灭灯";
+"Test Vibrator" = "开始震动马达";
+"Stop Vibrator" = "停止震动马达";

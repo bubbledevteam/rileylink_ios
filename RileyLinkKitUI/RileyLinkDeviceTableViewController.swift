@@ -271,6 +271,10 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case uptime
         case frequency
         case battery
+        case orl
+    }
+    
+    private enum CommandRow: Int, CaseCountable {
         case yellow
         case red
         case off
@@ -291,7 +295,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .device:
             return DeviceRow.count
         case .commands:
-            return 0
+            return CommandRow.count
         }
     }
 
@@ -331,20 +335,26 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .battery:
                 cell.textLabel?.text = NSLocalizedString("Battery level", comment: "The title of the cell showing battery level")
                 cell.setDetailBatteryLevel(battery)
-            case .yellow:
-                cell.textLabel?.text = NSLocalizedString("点亮黄灯", comment: "The title of the cell showing 点亮黄灯")
-            case .red:
-                cell.textLabel?.text = NSLocalizedString("点亮红灯", comment: "The title of the cell showing 点亮红灯")
-            case .off:
-                cell.textLabel?.text = NSLocalizedString("灭灯", comment: "The title of the cell showing 灭灯")
-            case .shake:
-                cell.textLabel?.text = NSLocalizedString("开始震动马达", comment: "The title of the cell showing 开始震动马达")
-            case .shakeOff:
-                cell.textLabel?.text = NSLocalizedString("停止震动马达", comment: "The title of the cell showing 停止震动马达")
+            case .orl:
+                cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = "FW/HW"
             }
         case .commands:
             cell.accessoryType = .disclosureIndicator
             cell.detailTextLabel?.text = nil
+            
+            switch CommandRow(rawValue: indexPath.row)! {
+            case .yellow:
+                cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
+            case .red:
+                cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
+            case .off:
+                cell.textLabel?.text = NSLocalizedString("Turn Off LED", comment: "The title of the cell showing Turn Off LED")
+            case .shake:
+                cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
+            case .shakeOff:
+                cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
+            }
         }
 
         return cell
@@ -389,15 +399,17 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
+            default:
+                break
+            }
+        case .commands:
+            switch CommandRow(rawValue: indexPath.row)! {
             case .yellow: orangeAction(index: 1)
             case .red: orangeAction(index: 2)
             case .off: orangeAction(index: 3)
             case .shake: orangeAction(index: 4)
             case .shakeOff: orangeAction(index: 5)
-            default:
-                break
             }
-        case .commands:
             break
         }
     }
