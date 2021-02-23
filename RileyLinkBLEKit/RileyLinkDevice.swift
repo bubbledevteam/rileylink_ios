@@ -33,6 +33,9 @@ public class RileyLinkDevice {
 
     // Confined to `lock`
     private var isTimerTickEnabled = true
+    
+    // Confined to `lock`
+    private var logs = ""
 
     /// Serializes access to device state
     private var lock = os_unfair_lock()
@@ -102,12 +105,14 @@ extension RileyLinkDevice {
     
     public func orangeAction(mode: Int) {
         do {
+            add(log: "orangeAction: \(mode)")
             try manager.orangeAction(mode: RileyLinkOrangeMode(rawValue: UInt8(mode))!)
         } catch {}
     }
     
     public func orangeWritePwd() {
         do {
+            add(log: "orangeWritePwd")
             try manager.orangeWritePwd()
         } catch {}
     }
@@ -315,6 +320,7 @@ extension RileyLinkDevice {
 
 extension RileyLinkDevice: PeripheralManagerDelegate {
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic) {
+        add(log: "didUpdate: \(characteristic.uuid.uuidString)")
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
             orangeWritePwd()
@@ -418,6 +424,16 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
 
 
 extension RileyLinkDevice: CustomDebugStringConvertible {
+    
+    public func add(log: String) {
+        os_unfair_lock_lock(&lock)
+        if self.logs.count > 10000 {
+            self.logs.removeLast(1000)
+        }
+        self.logs.append("\(Date())\n\(log)\n")
+        os_unfair_lock_unlock(&lock)
+    }
+    
     public var debugDescription: String {
         os_unfair_lock_lock(&lock)
         let lastIdle = self.lastIdle
@@ -435,7 +451,8 @@ extension RileyLinkDevice: CustomDebugStringConvertible {
             "* radioFirmware: \(String(describing: radioFirmwareVersion))",
             "* bleFirmware: \(String(describing: bleFirmwareVersion))",
             "* peripheralManager: \(manager)",
-            "* sessionQueue.operationCount: \(sessionQueue.operationCount)"
+            "* sessionQueue.operationCount: \(sessionQueue.operationCount)",
+            "* logs: \(logs)"
         ].joined(separator: "\n")
     }
 }

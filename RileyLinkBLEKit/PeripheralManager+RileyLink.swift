@@ -12,7 +12,7 @@ import os.log
 protocol CBUUIDRawValue: RawRepresentable {}
 extension CBUUIDRawValue where RawValue == String {
     var cbUUID: CBUUID {
-        return CBUUID(string: rawValue)
+        return CBUUID(string: rawValue.uppercased())
     }
 }
 
@@ -20,7 +20,7 @@ extension CBUUIDRawValue where RawValue == String {
 enum RileyLinkServiceUUID: String, CBUUIDRawValue {
     case main = "0235733B-99C5-4197-B856-69219C2A3845"
     case battery = "180F"
-    case orange = "6e400001-b5a3-f393-e0a9-e50e24dcca9e"
+    case orange = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 }
 
 enum MainServiceCharacteristicUUID: String, CBUUIDRawValue {
@@ -37,8 +37,8 @@ enum BatteryServiceCharacteristicUUID: String, CBUUIDRawValue {
 }
 
 enum OrangeServiceCharacteristicUUID: String, CBUUIDRawValue {
-    case orange         = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"
-    case orangeNotif    = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+    case orange         = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"
+    case orangeNotif    = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"
 }
 
 enum RileyLinkOrangeMode: UInt8 {
