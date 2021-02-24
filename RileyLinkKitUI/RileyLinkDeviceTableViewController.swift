@@ -32,6 +32,16 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
     
+    private var fw_hw: String? {
+        didSet {
+            guard isViewLoaded else {
+                return
+            }
+            
+            cellForRow(.orl)?.detailTextLabel?.text = fw_hw
+        }
+    }
+    
     private var uptime: TimeInterval? {
         didSet {
             guard isViewLoaded else {
@@ -108,6 +118,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         device.getStatus { (status) in
             DispatchQueue.main.async {
                 self.firmwareVersion = status.firmwareDescription
+                self.fw_hw = status.fw_hw
             }
         }
     }
@@ -196,6 +207,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             center.addObserver(forName: .DeviceDidStartIdle, object: device, queue: mainQueue) { [weak self] (note) in
                 self?.updateDeviceStatus()
             },
+            center.addObserver(forName: .DeviceFW_HWChange, object: device, queue: mainQueue) { [weak self] (note) in
+                self?.updateDeviceStatus()
+            },
         ]
     }
     
@@ -218,6 +232,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         
         updateBatteryLevel()
         
+        orangeAction(index: 9)
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -337,7 +352,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 cell.setDetailBatteryLevel(battery)
             case .orl:
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
-                cell.detailTextLabel?.text = "FW/HW"
+                cell.detailTextLabel?.text = fw_hw
             }
         case .commands:
             cell.accessoryType = .disclosureIndicator

@@ -47,6 +47,7 @@ enum RileyLinkOrangeMode: UInt8 {
     case off = 0x3
     case shake = 0x4
     case shakeOff = 0x5
+    case fw_hw = 0x9
 }
 
 enum RileyLinkLEDMode: UInt8 {

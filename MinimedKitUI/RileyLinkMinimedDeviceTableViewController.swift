@@ -53,6 +53,16 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         }
     }
     
+    private var fw_hw: String? {
+        didSet {
+            guard isViewLoaded else {
+                return
+            }
+            
+            cellForRow(.orl)?.detailTextLabel?.text = fw_hw
+        }
+    }
+    
     private var uptime: TimeInterval? {
         didSet {
             guard isViewLoaded else {
@@ -152,6 +162,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             DispatchQueue.main.async {
                 self.lastIdle = status.lastIdle
                 self.firmwareVersion = status.firmwareDescription
+                self.fw_hw = status.fw_hw
             }
         }
     }
@@ -196,7 +207,10 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 if let state = note.userInfo?[PumpOps.notificationPumpStateKey] as? PumpState {
                     self?.pumpState = state
                 }
-            }
+            },
+            center.addObserver(forName: .DeviceFW_HWChange, object: device, queue: mainQueue) { [weak self] (note) in
+                self?.updateDeviceStatus()
+            },
         ]
     }
     
@@ -216,6 +230,8 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         updateUptime()
         
         updateBatteryLevel()
+        
+        orangeAction(index: 9)
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -364,7 +380,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 cell.setDetailBatteryLevel(battery)
             case .orl:
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
-                cell.detailTextLabel?.text = "FW/HW"
+                cell.detailTextLabel?.text = fw_hw
             }
         case .pump:
             switch PumpRow(rawValue: indexPath.row)! {

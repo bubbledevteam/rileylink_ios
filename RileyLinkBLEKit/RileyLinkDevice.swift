@@ -39,6 +39,8 @@ public class RileyLinkDevice {
 
     /// Serializes access to device state
     private var lock = os_unfair_lock()
+    
+    private var fw_hw = "FW/HW"
 
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
@@ -158,6 +160,8 @@ extension RileyLinkDevice {
         public let bleFirmwareVersion: BLEFirmwareVersion?
 
         public let radioFirmwareVersion: RadioFirmwareVersion?
+        
+        public let fw_hw: String?
     }
 
     public func getStatus(_ completion: @escaping (_ status: Status) -> Void) {
@@ -170,7 +174,8 @@ extension RileyLinkDevice {
                 lastIdle: lastIdle,
                 name: self.name,
                 bleFirmwareVersion: self.bleFirmwareVersion,
-                radioFirmwareVersion: self.radioFirmwareVersion
+                radioFirmwareVersion: self.radioFirmwareVersion,
+                fw_hw: self.fw_hw
             ))
         }
     }
@@ -389,7 +394,14 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange:
             self.log.error("orange response: %@", characteristic.value?.hexadecimalString ?? "")
-            break
+            
+            guard let data = characteristic.value, data.count > 5 else { return }
+            if data.first == 9 {
+                if data[1] == 0xAA {
+                    fw_hw = "FW\(data[2]).\(data[3])/HW\(data[4]).\(data[5])"
+                    NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                }
+            }
         default:
             break
         }
@@ -477,4 +489,6 @@ extension Notification.Name {
     public static let DeviceRSSIDidChange = Notification.Name(rawValue: "com.rileylink.RileyLinkBLEKit.RSSIDidChange")
 
     public static let DeviceTimerDidTick = Notification.Name(rawValue: "com.rileylink.RileyLinkBLEKit.TimerTickDidChange")
+    
+    public static let DeviceFW_HWChange = Notification.Name(rawValue: "com.rileylink.RileyLinkBLEKit.DeviceFW_HWChange")
 }
