@@ -392,8 +392,8 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         }
         
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
-        case .orange:
-            self.log.error("orange response: %@", characteristic.value?.hexadecimalString ?? "")
+        case .orange, .orangeNotif:
+            add(log: "orange response: \(characteristic.value?.hexadecimalString ?? "")")
             
             guard let data = characteristic.value, data.count > 5 else { return }
             if data.first == 9 {
