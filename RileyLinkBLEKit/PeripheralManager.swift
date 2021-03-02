@@ -51,6 +51,8 @@ class PeripheralManager: NSObject {
 
     // Confined to `queue`
     private var needsConfiguration = true
+    
+    private var logString = ""
 
     weak var delegate: PeripheralManagerDelegate? {
         didSet {
@@ -161,6 +163,7 @@ extension PeripheralManager {
                 continue
             }
 
+            add(log: "service: \(service.uuid.uuidString)")
             try discoverCharacteristics(characteristics, for: service, timeout: discoveryTimeout)
         }
 
@@ -173,6 +176,7 @@ extension PeripheralManager {
                 guard let characteristic = service.characteristics?.itemWithUUID(characteristicUUID) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
+                add(log: "setNotifyValue: \(characteristic.uuid.uuidString)")
 
                 guard !characteristic.isNotifying else {
                     continue
@@ -420,7 +424,7 @@ extension PeripheralManager: CBPeripheralDelegate {
             }
         } else if let macro = configuration.valueUpdateMacros[characteristic.uuid] {
             macro(self)
-        } else if commandConditions.isEmpty {
+        } else {
             notifyDelegate = true // execute after the unlock
         }
 
@@ -464,10 +468,19 @@ extension PeripheralManager: CBCentralManagerDelegate {
 
 
 extension PeripheralManager {
+    
+    func add(log: String) {
+        logString += log
+        if logString.count > 10000 {
+            logString.removeFirst(1000)
+        }
+    }
+    
     public override var debugDescription: String {
         var items = [
             "## PeripheralManager",
             "peripheral: \(peripheral)",
+            "log: \(logString)"
         ]
         queue.sync {
             items.append("needsConfiguration: \(needsConfiguration)")

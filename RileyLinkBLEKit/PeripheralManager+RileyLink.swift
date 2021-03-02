@@ -18,9 +18,9 @@ extension CBUUIDRawValue where RawValue == String {
 
 
 enum RileyLinkServiceUUID: String, CBUUIDRawValue {
-    case main = "0235733B-99C5-4197-B856-69219C2A3845"
+    case main    = "0235733B-99C5-4197-B856-69219C2A3845"
     case battery = "180F"
-    case orange = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
+    case orange  = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"
 }
 
 enum MainServiceCharacteristicUUID: String, CBUUIDRawValue {
@@ -364,30 +364,28 @@ extension PeripheralManager {
     }
     
     func orangeAction(mode: RileyLinkOrangeMode) throws {
-        perform { (manager) in
-            do {
-                guard let characteristic = manager.peripheral.getOrangeCharacteristic(.orange) else {
-                    throw PeripheralManagerError.unknownCharacteristic
-                }
-                let value = Data([0xbb, mode.rawValue])
-                try manager.writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
-            } catch (let error) {
-                assertionFailure(String(describing: error))
+        do {
+            guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                throw PeripheralManagerError.unknownCharacteristic
             }
+            let value = Data([0xbb, mode.rawValue])
+            add(log: "write: \(value.hexadecimalString)")
+            try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+        } catch (_) {
+            add(log: "orangeAction failed")
         }
     }
     
     func orangeWritePwd() throws {
-        perform { (manager) in
-            do {
-                guard let characteristic = manager.peripheral.getOrangeCharacteristic(.orange) else {
-                    throw PeripheralManagerError.unknownCharacteristic
-                }
-                let value = Data([0xAA])
-                try manager.writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
-            } catch (let error) {
-                assertionFailure(String(describing: error))
+        do {
+            guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                throw PeripheralManagerError.unknownCharacteristic
             }
+            let value = Data([0xAA])
+            add(log: "write: \(value.hexadecimalString)")
+            try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+        } catch (_) {
+            add(log: "orangeWritePwd failed")
         }
     }
     

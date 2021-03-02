@@ -338,6 +338,7 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
     // This is called from the central's queue
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic) {
         log.debug("Did UpdateValueFor %@", characteristic)
+        add(log: "Did UpdateValueFor: \(characteristic.uuid.uuidString), value: \(characteristic.value?.hexadecimalString ?? "")")
         switch MainServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .data?:
             guard let value = characteristic.value, value.count > 0 else {
@@ -393,8 +394,6 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
-            add(log: "orange response: \(characteristic.value?.hexadecimalString ?? "")")
-            
             guard let data = characteristic.value, data.count > 5 else { return }
             if data.first == 9 {
                 if data[1] == 0xAA {
