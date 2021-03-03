@@ -374,6 +374,10 @@ extension PeripheralManager {
                 try setNotifyValue(true, for: characteristicNotif, timeout: 2)
             }
             
+            if !writePsw {
+                try orangeWritePwd()
+            }
+            
             guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                 throw PeripheralManagerError.unknownCharacteristic
             }
@@ -400,6 +404,7 @@ extension PeripheralManager {
             }
             let value = Data([0xAA])
             add(log: "write: \(value.hexadecimalString)")
+            writePsw = true
             try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
         } catch (_) {
             add(log: "orangeWritePwd failed")
