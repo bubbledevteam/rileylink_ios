@@ -52,7 +52,7 @@ class PeripheralManager: NSObject {
     // Confined to `queue`
     private var needsConfiguration = true
     
-    private var logString = ""
+    var logString = ""
 
     weak var delegate: PeripheralManagerDelegate? {
         didSet {

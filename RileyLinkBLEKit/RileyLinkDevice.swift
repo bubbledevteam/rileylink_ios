@@ -463,7 +463,8 @@ extension RileyLinkDevice: CustomDebugStringConvertible {
             "* bleFirmware: \(String(describing: bleFirmwareVersion))",
             "* peripheralManager: \(manager)",
             "* sessionQueue.operationCount: \(sessionQueue.operationCount)",
-            "* logs: \(logs)"
+            "* logs: \(logs)",
+            "* manager logs: \(manager.logString)"
         ].joined(separator: "\n")
     }
 }
