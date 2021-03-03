@@ -365,6 +365,15 @@ extension PeripheralManager {
     
     func orangeAction(mode: RileyLinkOrangeMode) throws {
         do {
+            
+            guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
+                throw PeripheralManagerError.unknownCharacteristic
+            }
+            
+            if !characteristicNotif.isNotifying {
+                try setNotifyValue(true, for: characteristicNotif, timeout: 2)
+            }
+            
             guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                 throw PeripheralManagerError.unknownCharacteristic
             }
@@ -378,6 +387,14 @@ extension PeripheralManager {
     
     func orangeWritePwd() throws {
         do {
+            guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
+                throw PeripheralManagerError.unknownCharacteristic
+            }
+            
+            if !characteristicNotif.isNotifying {
+                try setNotifyValue(true, for: characteristicNotif, timeout: 2)
+            }
+            
             guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                 throw PeripheralManagerError.unknownCharacteristic
             }

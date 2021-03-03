@@ -176,7 +176,6 @@ extension PeripheralManager {
                 guard let characteristic = service.characteristics?.itemWithUUID(characteristicUUID) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
-                add(log: "setNotifyValue: \(characteristic.uuid.uuidString)")
 
                 guard !characteristic.isNotifying else {
                     continue
@@ -272,6 +271,7 @@ extension PeripheralManager {
 
     /// - Throws: PeripheralManagerError
     func setNotifyValue(_ enabled: Bool, for characteristic: CBCharacteristic, timeout: TimeInterval) throws {
+        add(log: "setNotifyValue: \(characteristic.uuid.uuidString)")
         try runCommand(timeout: timeout) {
             addCondition(.notificationStateUpdate(characteristic: characteristic, enabled: enabled))
 
@@ -470,7 +470,7 @@ extension PeripheralManager: CBCentralManagerDelegate {
 extension PeripheralManager {
     
     func add(log: String) {
-        logString += log
+        logString += "\n\(log)"
         if logString.count > 10000 {
             logString.removeFirst(1000)
         }
