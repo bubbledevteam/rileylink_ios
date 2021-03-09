@@ -165,7 +165,6 @@ extension PeripheralManager {
                 continue
             }
 
-            add(log: "service: \(service.uuid.uuidString)")
             try discoverCharacteristics(characteristics, for: service, timeout: discoveryTimeout)
         }
 
@@ -174,7 +173,10 @@ extension PeripheralManager {
                 throw PeripheralManagerError.unknownCharacteristic
             }
 
+            add(log: "serviceUUID: \(serviceUUID.uuidString)")
+            
             for characteristicUUID in characteristicUUIDs {
+                add(log: "characteristicUUID: \(characteristicUUID.uuidString)")
                 guard let characteristic = service.characteristics?.itemWithUUID(characteristicUUID) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
@@ -472,7 +474,7 @@ extension PeripheralManager: CBCentralManagerDelegate {
 extension PeripheralManager {
     
     func add(log: String) {
-        logString += "\n\(log)"
+        logString += "\(Date())\n\(log)\n"
         if logString.count > 10000 {
             logString.removeFirst(1000)
         }

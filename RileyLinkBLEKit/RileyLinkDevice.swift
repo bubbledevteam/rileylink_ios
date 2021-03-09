@@ -328,6 +328,7 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         add(log: "didUpdate: \(characteristic.uuid.uuidString)")
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
+            manager.writePsw = true
             orangeWritePwd()
         default:
             break
@@ -430,6 +431,8 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
 
         let radioVersionString = try manager.readRadioFirmwareVersion(timeout: 1, responseType: bleFirmwareVersion?.responseType ?? .buffered)
         radioFirmwareVersion = RadioFirmwareVersion(versionString: radioVersionString)
+        
+        try manager.setOrangeNotifyOn()
     }
 }
 

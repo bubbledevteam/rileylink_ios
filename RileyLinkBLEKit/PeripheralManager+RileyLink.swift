@@ -79,9 +79,6 @@ extension PeripheralManager.Configuration {
             notifyingCharacteristics: [
                 RileyLinkServiceUUID.main.cbUUID: [
                     MainServiceCharacteristicUUID.responseCount.cbUUID
-                ],
-                RileyLinkServiceUUID.orange.cbUUID: [
-                    OrangeServiceCharacteristicUUID.orangeNotif.cbUUID
                 ]
             ],
             valueUpdateMacros: [
@@ -363,19 +360,19 @@ extension PeripheralManager {
         }
     }
     
+    func setOrangeNotifyOn() throws {
+        guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
+            throw PeripheralManagerError.unknownCharacteristic
+        }
+        
+        add(log: "setOrangeNotifyOn: \(characteristicNotif.uuid.uuidString)")
+        try setNotifyValue(true, for: characteristicNotif, timeout: 2)
+    }
+    
     func orangeAction(mode: RileyLinkOrangeMode) throws {
         do {
-            
-            guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
-                throw PeripheralManagerError.unknownCharacteristic
-            }
-            
-            if !characteristicNotif.isNotifying {
-                try setNotifyValue(true, for: characteristicNotif, timeout: 2)
-            }
-            
             if !writePsw {
-                try orangeWritePwd()
+                try setOrangeNotifyOn()
             }
             
             guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
@@ -391,20 +388,11 @@ extension PeripheralManager {
     
     func orangeWritePwd() throws {
         do {
-            guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
-                throw PeripheralManagerError.unknownCharacteristic
-            }
-            
-            if !characteristicNotif.isNotifying {
-                try setNotifyValue(true, for: characteristicNotif, timeout: 2)
-            }
-            
             guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                 throw PeripheralManagerError.unknownCharacteristic
             }
             let value = Data([0xAA])
             add(log: "write: \(value.hexadecimalString)")
-            writePsw = true
             try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
         } catch (_) {
             add(log: "orangeWritePwd failed")
