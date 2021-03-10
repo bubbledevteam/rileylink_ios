@@ -361,41 +361,51 @@ extension PeripheralManager {
     }
     
     func setOrangeNotifyOn() throws {
-        guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
-            throw PeripheralManagerError.unknownCharacteristic
-        }
-        
-        add(log: "setOrangeNotifyOn: \(characteristicNotif.uuid.uuidString)")
-        try setNotifyValue(true, for: characteristicNotif, timeout: 2)
-    }
-    
-    func orangeAction(mode: RileyLinkOrangeMode) throws {
-        do {
-            if !writePsw {
-                try setOrangeNotifyOn()
+        perform { [self] (manager) in
+            guard let characteristicNotif = peripheral.getOrangeCharacteristic(.orangeNotif) else {
+                return
             }
             
-            guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
-                throw PeripheralManagerError.unknownCharacteristic
+            add(log: "setOrangeNotifyOn: \(characteristicNotif.uuid.uuidString)")
+            do {
+                try setNotifyValue(true, for: characteristicNotif, timeout: 2)
+            } catch {
+                add(log: "setOrangeNotifyOn Error: \(error.localizedDescription)")
             }
-            let value = Data([0xbb, mode.rawValue])
-            add(log: "write: \(value.hexadecimalString)")
-            try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
-        } catch (_) {
-            add(log: "orangeAction failed")
         }
     }
     
-    func orangeWritePwd() throws {
-        do {
-            guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
-                throw PeripheralManagerError.unknownCharacteristic
+    func orangeAction(mode: RileyLinkOrangeMode) {
+        perform { [self] (manager) in
+            do {
+                if !writePsw {
+                    try setOrangeNotifyOn()
+                }
+                
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xbb, mode.rawValue])
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "orangeAction failed")
             }
-            let value = Data([0xAA])
-            add(log: "write: \(value.hexadecimalString)")
-            try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
-        } catch (_) {
-            add(log: "orangeWritePwd failed")
+        }
+    }
+    
+    func orangeWritePwd() {
+        perform { [self] (manager) in
+            do {
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xAA])
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "orangeWritePwd failed")
+            }
         }
     }
     

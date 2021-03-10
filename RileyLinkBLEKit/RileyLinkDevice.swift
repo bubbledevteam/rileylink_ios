@@ -106,17 +106,13 @@ extension RileyLinkDevice {
     }
     
     public func orangeAction(mode: Int) {
-        do {
-            add(log: "orangeAction: \(mode)")
-            try manager.orangeAction(mode: RileyLinkOrangeMode(rawValue: UInt8(mode))!)
-        } catch {}
+        add(log: "orangeAction: \(mode)")
+        manager.orangeAction(mode: RileyLinkOrangeMode(rawValue: UInt8(mode))!)
     }
     
     public func orangeWritePwd() {
-        do {
-            add(log: "orangeWritePwd")
-            try manager.orangeWritePwd()
-        } catch {}
+        add(log: "orangeWritePwd")
+        manager.orangeWritePwd()
     }
     
     public func enableBLELEDs() {
