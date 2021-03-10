@@ -74,11 +74,15 @@ extension PeripheralManager.Configuration {
                 ],
                 RileyLinkServiceUUID.orange.cbUUID: [
                     OrangeServiceCharacteristicUUID.orange.cbUUID,
+                    OrangeServiceCharacteristicUUID.orangeNotif.cbUUID,
                 ]
             ],
             notifyingCharacteristics: [
                 RileyLinkServiceUUID.main.cbUUID: [
                     MainServiceCharacteristicUUID.responseCount.cbUUID
+                ],
+                RileyLinkServiceUUID.orange.cbUUID: [
+                    OrangeServiceCharacteristicUUID.orangeNotif.cbUUID,
                 ]
             ],
             valueUpdateMacros: [
