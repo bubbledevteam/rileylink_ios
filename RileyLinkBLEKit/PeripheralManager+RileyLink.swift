@@ -382,10 +382,6 @@ extension PeripheralManager {
     func orangeAction(mode: RileyLinkOrangeMode) {
         perform { [self] (manager) in
             do {
-                if !writePsw {
-                    try setOrangeNotifyOn()
-                }
-                
                 guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
@@ -394,6 +390,25 @@ extension PeripheralManager {
                 try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
             } catch (_) {
                 add(log: "orangeAction failed")
+            }
+        }
+    }
+    
+    
+    
+    func setAction(index: Int, open: Bool) {
+        perform { [self] (manager) in
+            do {
+                guard setDatas.count > 5 else { return }
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                setDatas[index] = open ? 1 : 0
+                let value = Data(setDatas)
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "setAction failed")
             }
         }
     }
@@ -413,6 +428,35 @@ extension PeripheralManager {
         }
     }
     
+    func orangeReadSet() {
+        perform { [self] (manager) in
+            do {
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xbb, 0x0b])
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "orangeReadSet failed")
+            }
+        }
+    }
+    
+    func orangeClose() {
+        perform { [self] (manager) in
+            do {
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xcc])
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "orangeClose failed")
+            }
+        }
+    }
     
     /// Writes command data expecting a single response
     ///
