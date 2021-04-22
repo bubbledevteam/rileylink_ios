@@ -403,7 +403,13 @@ extension PeripheralManager {
                 guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
-                setDatas[index] = open ? 1 : 0
+                if index == 0 {
+                    setDatas[2] = open ? 1 : 0
+                    setDatas[4] = open ? 1 : 0
+                } else if index == 1 {
+                    setDatas[3] = open ? 1 : 0
+                    setDatas[5] = open ? 1 : 0
+                }
                 let value = Data(setDatas)
                 add(log: "write: \(value.hexadecimalString)")
                 try writeValue(value, for: characteristic, type: .withResponse, timeout: PeripheralManager.expectedMaxBLELatency)
