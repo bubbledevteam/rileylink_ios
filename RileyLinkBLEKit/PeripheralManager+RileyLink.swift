@@ -382,13 +382,19 @@ extension PeripheralManager {
     func orangeAction(mode: RileyLinkOrangeMode) {
         perform { [self] (manager) in
             do {
-                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
-                    throw PeripheralManagerError.unknownCharacteristic
-                }
-                let value = Data([0xbb, mode.rawValue])
-                add(log: "write: \(value.hexadecimalString)")
-                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
-            } catch (_) {
+                try runCommand(timeout: PeripheralManager.expectedMaxBLELatency, command: {
+                    do {
+                        guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                            throw PeripheralManagerError.unknownCharacteristic
+                        }
+                        let value = Data([0xbb, mode.rawValue])
+                        add(log: "write: \(value.hexadecimalString)")
+                        try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+                    } catch (_) {
+                        add(log: "orangeAction failed")
+                    }
+                })
+            } catch {
                 add(log: "orangeAction failed")
             }
         }
@@ -431,12 +437,18 @@ extension PeripheralManager {
     func orangeReadSet() {
         perform { [self] (manager) in
             do {
-                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
-                    throw PeripheralManagerError.unknownCharacteristic
+                try runCommand(timeout: PeripheralManager.expectedMaxBLELatency) {
+                    do {
+                        guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                            throw PeripheralManagerError.unknownCharacteristic
+                        }
+                        let value = Data([0xbb, 0x0b])
+                        add(log: "write: \(value.hexadecimalString)")
+                        try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+                    } catch (_) {
+                        add(log: "orangeReadSet failed")
+                    }
                 }
-                let value = Data([0xbb, 0x0b])
-                add(log: "write: \(value.hexadecimalString)")
-                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
             } catch (_) {
                 add(log: "orangeReadSet failed")
             }

@@ -427,12 +427,15 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     fw_hw = "FW\(data[2]).\(data[3])/HW\(data[4]).\(data[5])"
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
-            } else if data.first == 0xbb, data[1] == 0x0c {
-                manager.setDatas = [UInt8](data)
+            } else if data.first == 0x0b, data[1] == 0xaa {
+                var bytes = [UInt8](data)
+                bytes.removeFirst(2)
+                bytes = [0xbb, 0x0c] + bytes
+                manager.setDatas = bytes
                 disconnectLed = (data[2] != 0)
                 disconnectVibration = (data[3] != 0)
                 connectLed = (data[4] != 0)
-                connectLed = (data[5] != 0)
+                connectVibration = (data[5] != 0)
                 NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
             }
         default:
