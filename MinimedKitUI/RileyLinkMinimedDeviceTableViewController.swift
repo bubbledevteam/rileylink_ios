@@ -189,10 +189,10 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             DispatchQueue.main.async {
                 self.firmwareVersion = status.firmwareDescription
                 self.fw_hw = status.fw_hw
-                self.connectLed = status.connectLed
-                self.connectVibration = status.connectVibration
-                self.disconnectLed = status.disconnectLed
-                self.disconnectVibration = status.disconnectVibration
+                self.connectLed = status.ledOn
+                self.connectVibration = status.vibrationOn
+                self.disconnectLed = status.ledOn
+                self.disconnectVibration = status.vibrationOn
                 
                 self.tableView.reloadData()
             }
