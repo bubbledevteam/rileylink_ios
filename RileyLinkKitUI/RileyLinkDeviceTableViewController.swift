@@ -48,12 +48,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
     
-    private var disconnectLed: Bool = false
-    private var disconnectVibration: Bool = false
-    
-    private var connectLed: Bool = false
-    private var connectVibration: Bool = false
-    
     private var uptime: TimeInterval? {
         didSet {
             guard isViewLoaded else {
@@ -131,10 +125,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             DispatchQueue.main.async {
                 self.firmwareVersion = status.firmwareDescription
                 self.fw_hw = status.fw_hw
-                self.connectLed = status.connectLed
-                self.connectVibration = status.connectVibration
-                self.disconnectLed = status.disconnectLed
-                self.disconnectVibration = status.disconnectVibration
+                self.ledOn = status.ledOn
+                self.vibrationOn = status.vibrationOn
                 
                 self.tableView.reloadData()
             }
@@ -382,34 +374,46 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 } else {
                     orangeAction(index: 3)
                 }
+                yellowOn = sender.isOn
             case .red:
                 if sender.isOn {
                     orangeAction(index: 2)
                 } else {
                     orangeAction(index: 3)
                 }
+                redOn = sender.isOn
             case .shake:
                 if sender.isOn {
                     orangeAction(index: 4)
                 } else {
                     orangeAction(index: 5)
                 }
+                shakeOn = sender.isOn
             }
         case .configureCommand:
             switch ConfigureCommandRow(rawValue: sender.index)! {
             case .led:
                 orangeAction(index: 0, open: sender.isOn)
+                ledOn = sender.isOn
             case .vibration:
                 orangeAction(index: 1, open: sender.isOn)
+                vibrationOn = sender.isOn
             }
         default:
             break
         }
+        tableView.reloadData()
     }
     
     public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 45
     }
+    
+    var yellowOn = false
+    var redOn = false
+    var shakeOn = false
+    private var ledOn: Bool = false
+    private var vibrationOn: Bool = false
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: UITableViewCell
@@ -468,17 +472,17 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             switch CommandRow(rawValue: indexPath.row)! {
             case .yellow:
                 switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
                 cell.accessoryType = .none
+                switchView?.isOn = yellowOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
             case .red:
                 switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
                 cell.accessoryType = .none
+                switchView?.isOn = redOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
             case .shake:
                 switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
+                switchView?.isOn = shakeOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
             }
@@ -486,12 +490,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             switch ConfigureCommandRow(rawValue: indexPath.row)! {
             case .led:
                 switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
+                switchView?.isOn = ledOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State LED", comment: "The title of the cell showing Stop Vibrator")
             case .vibration:
                 switchView?.isHidden = false
-                switchView?.isOn = disconnectVibration
+                switchView?.isOn = vibrationOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }

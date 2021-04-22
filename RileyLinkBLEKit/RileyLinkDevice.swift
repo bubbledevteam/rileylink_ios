@@ -41,11 +41,8 @@ public class RileyLinkDevice {
     private var lock = os_unfair_lock()
     
     private var fw_hw = "FW/HW"
-    private var disconnectLed: Bool = false
-    private var disconnectVibration: Bool = false
-    
-    private var connectLed: Bool = false
-    private var connectVibration: Bool = false
+    public var ledOn: Bool = false
+    public var vibrationOn: Bool = false
 
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
@@ -179,11 +176,8 @@ extension RileyLinkDevice {
         
         public let fw_hw: String?
         
-        public let disconnectLed: Bool
-        public let disconnectVibration: Bool
-        
-        public let connectLed: Bool
-        public let connectVibration: Bool
+        public var ledOn: Bool = false
+        public var vibrationOn: Bool = false
     }
 
     public func getStatus(_ completion: @escaping (_ status: Status) -> Void) {
@@ -198,10 +192,8 @@ extension RileyLinkDevice {
                 bleFirmwareVersion: self.bleFirmwareVersion,
                 radioFirmwareVersion: self.radioFirmwareVersion,
                 fw_hw: self.fw_hw,
-                disconnectLed: self.disconnectLed,
-                disconnectVibration: self.disconnectVibration,
-                connectLed: self.connectLed,
-                connectVibration: self.connectVibration
+                ledOn: self.ledOn,
+                vibrationOn: self.vibrationOn
             ))
         }
     }
@@ -432,10 +424,8 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                 bytes.removeFirst(2)
                 bytes = [0xbb, 0x0c] + bytes
                 manager.setDatas = bytes
-                disconnectLed = (data[2] != 0)
-                disconnectVibration = (data[3] != 0)
-                connectLed = (data[4] != 0)
-                connectVibration = (data[5] != 0)
+                ledOn = (data[2] != 0)
+                vibrationOn = (data[3] != 0)
                 NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
             }
         default:
