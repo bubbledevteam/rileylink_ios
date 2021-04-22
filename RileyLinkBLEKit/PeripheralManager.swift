@@ -474,6 +474,7 @@ extension PeripheralManager: CBCentralManagerDelegate {
 extension PeripheralManager {
     
     func add(log: String) {
+        print("LLLLLL: \(log)")
         logString += "\(Date())\n\(log)\n"
         if logString.count > 10000 {
             logString.removeFirst(1000)

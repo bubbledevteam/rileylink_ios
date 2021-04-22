@@ -457,7 +457,7 @@ extension PeripheralManager {
                 }
                 let value = Data([0xcc])
                 add(log: "write: \(value.hexadecimalString)")
-                try writeValue(value, for: characteristic, type: .withResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+                try writeValue(value, for: characteristic, type: .withoutResponse, timeout: PeripheralManager.expectedMaxBLELatency)
             } catch (_) {
                 add(log: "orangeClose failed")
             }
