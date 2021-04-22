@@ -126,7 +126,7 @@ extension RileyLinkDevice {
     }
     
     public func orangeClose() {
-        add(log: "orangeWritePwd")
+        add(log: "orangeClose")
         manager.orangeClose()
     }
     
@@ -429,6 +429,11 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                 }
             } else if data.first == 0xbb, data[1] == 0x0c {
                 manager.setDatas = [UInt8](data)
+                disconnectLed = (data[2] != 0)
+                disconnectVibration = (data[3] != 0)
+                connectLed = (data[4] != 0)
+                connectLed = (data[5] != 0)
+                NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
             }
         default:
             break
