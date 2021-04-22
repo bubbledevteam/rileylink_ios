@@ -375,12 +375,14 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                     orangeAction(index: 3)
                 }
                 yellowOn = sender.isOn
+                redOn = false
             case .red:
                 if sender.isOn {
                     orangeAction(index: 2)
                 } else {
                     orangeAction(index: 3)
                 }
+                yellowOn = false
                 redOn = sender.isOn
             case .shake:
                 if sender.isOn {
