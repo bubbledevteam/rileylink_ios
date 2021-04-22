@@ -402,6 +402,10 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             return CommandRow.count
         }
     }
+    
+    public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 45
+    }
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: UITableViewCell
@@ -413,8 +417,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             let switchView = RileyLinkSwitch()
             switchView.tag = 10000
             switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
-            let height = self.tableView(tableView, heightForRowAt: indexPath)
-            switchView.frame = CGRect(x: 0, y: (height - 31) / 2, width: 49, height: 31)
+            switchView.frame = CGRect(x: tableView.frame.width - 51 - 20, y: 7, width: 51, height: 31)
             cell.contentView.addSubview(switchView)
         }
         

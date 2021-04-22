@@ -322,6 +322,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     private enum Section: Int, CaseCountable {
         case device
         case commands
+        case configureCommand
     }
 
     private enum DeviceRow: Int, CaseCountable {
@@ -341,6 +342,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case off
         case shake
         case shakeOff
+    }
+    
+    private enum ConfigureCommandRow: Int, CaseCountable {
         case disconnectLed
         case disconnectVibration
         case connectLed
@@ -365,12 +369,14 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             return DeviceRow.count
         case .commands:
             return CommandRow.count
+        case .configureCommand:
+            return ConfigureCommandRow.count
         }
     }
     
     @objc
     func switchAction(sender: RileyLinkSwitch) {
-        switch CommandRow(rawValue: sender.index)! {
+        switch ConfigureCommandRow(rawValue: sender.index)! {
         case .connectLed:
             orangeAction(index: 4, open: sender.isOn)
         case .connectVibration:
@@ -379,9 +385,11 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             orangeAction(index: 2, open: sender.isOn)
         case .disconnectVibration:
             orangeAction(index: 3, open: sender.isOn)
-        default:
-            break
         }
+    }
+    
+    public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 45
     }
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -394,8 +402,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             let switchView = RileyLinkSwitch()
             switchView.tag = 10000
             switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
-            let height = self.tableView(tableView, heightForRowAt: indexPath)
-            switchView.frame = CGRect(x: 0, y: (height - 31) / 2, width: 49, height: 31)
+            switchView.frame = CGRect(x: tableView.frame.width - 51 - 20, y: 7, width: 51, height: 31)
             cell.contentView.addSubview(switchView)
         }
         
@@ -449,6 +456,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
             case .shakeOff:
                 cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
+            }
+        case .configureCommand:
+            switch ConfigureCommandRow(rawValue: indexPath.row)! {
             case .disconnectLed:
                 switchView?.isHidden = false
                 switchView?.isOn = disconnectLed
@@ -480,7 +490,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .device:
             return LocalizedString("Device", comment: "The title of the section describing the device")
         case .commands:
-            return LocalizedString("Commands", comment: "The title of the section describing commands")
+            return LocalizedString("Test Commands", comment: "The title of the section describing commands")
+        case .configureCommand:
+            return LocalizedString("Configure Commands", comment: "The title of the section describing commands")
         }
     }
 
@@ -496,6 +508,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 return false
             }
         case .commands:
+            return device.peripheralState == .connected
+        case .configureCommand:
             return device.peripheralState == .connected
         }
     }
@@ -524,9 +538,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .off: orangeAction(index: 3)
             case .shake: orangeAction(index: 4)
             case .shakeOff: orangeAction(index: 5)
-            default:
-                break
             }
+            break
+        case .configureCommand:
             break
         }
     }
