@@ -63,6 +63,12 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         }
     }
     
+    private var disconnectLed: Bool = false
+    private var disconnectVibration: Bool = false
+    
+    private var connectLed: Bool = false
+    private var connectVibration: Bool = false
+    
     private var uptime: TimeInterval? {
         didSet {
             guard isViewLoaded else {
@@ -141,13 +147,28 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
     
     func updateBatteryLevel() {
         device.runSession(withName: "Get battery level") { (session) in
-            do {
-                let batteryLevel = try self.device.getBatterylevel()
-                DispatchQueue.main.async {
-                    self.battery = batteryLevel
-                }
-            } catch {
+            let batteryLevel = self.device.getBatterylevel()
+            DispatchQueue.main.async {
+                self.battery = batteryLevel
             }
+        }
+    }
+    
+    func orangeClose() {
+        device.runSession(withName: "Orange Action Close") { (session) in
+            self.device.orangeClose()
+        }
+    }
+    
+    func orangeReadSet() {
+        device.runSession(withName: "orange Read Set") { (session) in
+            self.device.orangeReadSet()
+        }
+    }
+
+    func writePSW() {
+        device.runSession(withName: "Orange Action PSW") { (session) in
+            self.device.orangeWritePwd()
         }
     }
     
@@ -157,12 +178,23 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         }
     }
     
+    func orangeAction(index: Int, open: Bool) {
+        device.runSession(withName: "Orange Set Action \(index)") { (session) in
+            self.device.orangeSetAction(index: index, open: open)
+        }
+    }
+    
     private func updateDeviceStatus() {
         device.getStatus { (status) in
             DispatchQueue.main.async {
-                self.lastIdle = status.lastIdle
                 self.firmwareVersion = status.firmwareDescription
                 self.fw_hw = status.fw_hw
+                self.connectLed = status.connectLed
+                self.connectVibration = status.connectVibration
+                self.disconnectLed = status.disconnectLed
+                self.disconnectVibration = status.disconnectVibration
+                
+                self.tableView.reloadData()
             }
         }
     }
@@ -231,7 +263,16 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         
         updateBatteryLevel()
         
+        writePSW()
+        
         orangeAction(index: 9)
+        
+        orangeReadSet()
+    }
+    
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        orangeClose()
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -313,8 +354,28 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case off
         case shake
         case shakeOff
+        case disconnectLed
+        case disconnectVibration
+        case connectLed
+        case connectVibration
     }
 
+    @objc
+    func switchAction(sender: RileyLinkSwitch) {
+        switch CommandRow(rawValue: sender.index)! {
+        case .connectLed:
+            orangeAction(index: 4, open: sender.isOn)
+        case .connectVibration:
+            orangeAction(index: 5, open: sender.isOn)
+        case .disconnectLed:
+            orangeAction(index: 2, open: sender.isOn)
+        case .disconnectVibration:
+            orangeAction(index: 3, open: sender.isOn)
+        default:
+            break
+        }
+    }
+    
     private func cellForRow(_ row: DeviceRow) -> UITableViewCell? {
         return tableView.cellForRow(at: IndexPath(row: row.rawValue, section: Section.device.rawValue))
     }
@@ -349,8 +410,18 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             cell = reusableCell
         } else {
             cell = UITableViewCell(style: .value1, reuseIdentifier: CellIdentifier)
+            let switchView = RileyLinkSwitch()
+            switchView.tag = 10000
+            switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
+            let height = self.tableView(tableView, heightForRowAt: indexPath)
+            switchView.frame = CGRect(x: 0, y: (height - 31) / 2, width: 49, height: 31)
+            cell.contentView.addSubview(switchView)
         }
-
+        
+        let switchView = cell.contentView.viewWithTag(10000) as? RileyLinkSwitch
+        switchView?.isHidden = true
+        switchView?.index = indexPath.row
+        
         cell.accessoryType = .none
 
         switch Section(rawValue: indexPath.section)! {
@@ -455,6 +526,26 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
             case .shakeOff:
                 cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
+            case .disconnectLed:
+                switchView?.isHidden = false
+                switchView?.isOn = disconnectLed
+                cell.accessoryType = .none
+                cell.textLabel?.text = NSLocalizedString("Disconnect Led", comment: "The title of the cell showing Stop Vibrator")
+            case .disconnectVibration:
+                switchView?.isHidden = false
+                switchView?.isOn = disconnectVibration
+                cell.accessoryType = .none
+                cell.textLabel?.text = NSLocalizedString("Disconnect Vibrator", comment: "The title of the cell showing Stop Vibrator")
+            case .connectLed:
+                switchView?.isHidden = false
+                switchView?.isOn = connectLed
+                cell.accessoryType = .none
+                cell.textLabel?.text = NSLocalizedString("Connect Led", comment: "The title of the cell showing Stop Vibrator")
+            case .connectVibration:
+                switchView?.isHidden = false
+                switchView?.isOn = connectVibration
+                cell.accessoryType = .none
+                cell.textLabel?.text = NSLocalizedString("Connect Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }
         }
 
@@ -540,6 +631,8 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             case .off: orangeAction(index: 3)
             case .shake: orangeAction(index: 4)
             case .shakeOff: orangeAction(index: 5)
+            default:
+                break
             }
 
             if let cell = tableView.cellForRow(at: indexPath) {

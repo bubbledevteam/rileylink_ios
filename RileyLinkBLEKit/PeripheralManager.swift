@@ -52,8 +52,6 @@ class PeripheralManager: NSObject {
     // Confined to `queue`
     private var needsConfiguration = true
     
-    var writePsw = false
-    
     var logString = ""
 
     weak var delegate: PeripheralManagerDelegate? {
@@ -63,6 +61,8 @@ class PeripheralManager: NSObject {
             }
         }
     }
+    
+    var setDatas: [UInt8] = [0xbb, 0x0c, 0x01, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
 
     // Called from RileyLinkDeviceManager.managerQueue
     init(peripheral: CBPeripheral, configuration: Configuration, centralManager: CBCentralManager, queue: DispatchQueue) {
