@@ -325,6 +325,17 @@ extension RileyLinkDevice {
         }
 
         manager.centralManager(central, didConnect: peripheral)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+            let batteryLevel = self.getBatterylevel()
+            if (Int(batteryLevel) ?? 100) <= 20 {
+                let content = UNMutableNotificationContent()
+                content.title = "Low Battery"
+                content.subtitle = batteryLevel
+                let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
+                UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+            }
+        }
 
         NotificationCenter.default.post(name: .DeviceConnectionStateDidChange, object: self)
     }
