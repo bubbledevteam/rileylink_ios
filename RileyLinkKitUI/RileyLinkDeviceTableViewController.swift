@@ -150,6 +150,11 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         device.runSession(withName: "Get battery level") { (session) in
             let batteryLevel = self.device.getBatterylevel()
             DispatchQueue.main.async {
+                let content = UNMutableNotificationContent()
+                content.title = "Battery Low"
+                content.subtitle = batteryLevel
+                let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
+                UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
                 self.battery = batteryLevel
             }
         }
