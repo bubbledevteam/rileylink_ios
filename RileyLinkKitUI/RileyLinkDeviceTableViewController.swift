@@ -488,11 +488,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                     value = v
                 }
                 
-                var text = "Low Battery Alert"
-                if UserDefaults.standard.bool(forKey: "battery_alert") {
-                    text += "  \(value)%"
-                }
-                
+                let text = "Low Battery Alert  \(value)%"
                 switchView?.isHidden = false
                 switchView?.isOn = UserDefaults.standard.bool(forKey: "battery_alert")
                 cell.accessoryType = .none
