@@ -409,8 +409,10 @@ extension PeripheralManager {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
                 if index == 0 {
-                    setDatas[2] = open ? 1 : 0
+                    setDatas[2] = 0
+                    setDatas[3] = open ? 1 : 0
                 } else if index == 1 {
+                    setDatas[2] = 1
                     setDatas[3] = open ? 1 : 0
                 }
                 let value = Data(setDatas)
