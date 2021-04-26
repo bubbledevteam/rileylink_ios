@@ -326,15 +326,17 @@ extension RileyLinkDevice {
 
         manager.centralManager(central, didConnect: peripheral)
         
-        manager.queue.async {
-            let batteryLevel = self.getBatterylevel()
-            DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-                if (Int(batteryLevel) ?? 100) <= 20 {
-                    let content = UNMutableNotificationContent()
-                    content.title = "Low Battery"
-                    content.subtitle = batteryLevel
-                    let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
-                    UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        if UserDefaults.standard.bool(forKey: "battery_alert") {
+            manager.queue.async {
+                let batteryLevel = self.getBatterylevel()
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                    if (Int(batteryLevel) ?? 100) <= 20 {
+                        let content = UNMutableNotificationContent()
+                        content.title = "Low Battery"
+                        content.subtitle = batteryLevel
+                        let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
+                        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+                    }
                 }
             }
         }
@@ -426,20 +428,22 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
-            guard let data = characteristic.value, data.count > 5 else { return }
+            guard let data = characteristic.value, !data.isEmpty else { return }
             if data.first == 9 {
+                guard let data = characteristic.value, data.count > 5 else { return }
                 if data[1] == 0xAA {
                     fw_hw = "FW\(data[2]).\(data[3])/HW\(data[4]).\(data[5])"
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
-            } else if data.first == 0x0b, data[1] == 0xaa {
-                var bytes = [UInt8](data)
-                bytes.removeFirst(2)
-                bytes = [0xbb, 0x0c] + bytes
-                manager.setDatas = bytes
-                ledOn = (data[2] != 0)
-                vibrationOn = (data[3] != 0)
-                NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+            } else if data.first == 0xdd {
+                guard let data = characteristic.value, data.count > 5 else { return }
+                if data[1] == 0x01 {
+                    manager.setDatas[2] = data[3]
+                    manager.setDatas[3] = data[4]
+                    ledOn = (data[3] != 0)
+                    vibrationOn = (data[4] != 0)
+                    NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                }
             }
         default:
             break

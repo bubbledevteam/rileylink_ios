@@ -314,8 +314,13 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
 
     private enum Section: Int, CaseCountable {
         case device
+        case alert
         case commands
         case configureCommand
+    }
+    
+    private enum AlertRow: Int, CaseCountable {
+        case battery
     }
 
     private enum DeviceRow: Int, CaseCountable {
@@ -360,6 +365,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             return CommandRow.count
         case .configureCommand:
             return ConfigureCommandRow.count
+        case .alert:
+            return AlertRow.count
         }
     }
     
@@ -400,6 +407,11 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .vibration:
                 orangeAction(index: 1, open: sender.isOn)
                 vibrationOn = sender.isOn
+            }
+        case .alert:
+            switch AlertRow(rawValue: sender.index)! {
+            case .battery:
+                UserDefaults.standard.setValue(sender.isOn, forKey: "battery_alert")
             }
         default:
             break
@@ -467,6 +479,25 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
                 cell.detailTextLabel?.text = fw_hw
             }
+        case .alert:
+            switch AlertRow(rawValue: indexPath.row)! {
+            case .battery:
+                var value = 20
+                let v = UserDefaults.standard.integer(forKey: "battery_alert_value")
+                if v != 0 {
+                    value = v
+                }
+                
+                var text = "Battery level Alert"
+                if UserDefaults.standard.bool(forKey: "battery_alert") {
+                    text += " \(value)"
+                }
+                
+                switchView?.isHidden = false
+                switchView?.isOn = UserDefaults.standard.bool(forKey: "battery_alert")
+                cell.accessoryType = .none
+                cell.textLabel?.text = NSLocalizedString(text, comment: "The title of the cell showing battery level")
+            }
         case .commands:
             cell.accessoryType = .disclosureIndicator
             cell.detailTextLabel?.text = nil
@@ -514,6 +545,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             return LocalizedString("Test Commands", comment: "The title of the section describing commands")
         case .configureCommand:
             return LocalizedString("Configure Commands", comment: "The title of the section describing commands")
+        case .alert:
+            return LocalizedString("Alert", comment: "The title of the section describing commands")
         }
     }
 
@@ -532,6 +565,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             return device.peripheralState == .connected
         case .configureCommand:
             return device.peripheralState == .connected
+        case .alert:
+            return true
         }
     }
 
@@ -556,6 +591,23 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             break
         case .configureCommand:
             break
+        case .alert:
+            switch AlertRow(rawValue: indexPath.row)! {
+            case .battery:
+                let alert = UIAlertController.init(title: "Battery level Alert", message: nil, preferredStyle: .actionSheet)
+                let action1 = UIAlertAction.init(title: "20", style: .default) { _ in
+                    UserDefaults.standard.setValue(20, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action2 = UIAlertAction.init(title: "30", style: .default) { _ in
+                    UserDefaults.standard.setValue(30, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                alert.addAction(action1)
+                alert.addAction(action2)
+                present(alert, animated: true, completion: nil)
+            }
         }
     }
 }
