@@ -405,7 +405,6 @@ extension PeripheralManager {
     func setAction(index: Int, open: Bool) {
         perform { [self] (manager) in
             do {
-                guard setDatas.count > 5 else { return }
                 guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
                     throw PeripheralManagerError.unknownCharacteristic
                 }
