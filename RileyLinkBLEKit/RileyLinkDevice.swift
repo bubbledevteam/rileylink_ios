@@ -330,7 +330,11 @@ extension RileyLinkDevice {
             manager.queue.async {
                 let batteryLevel = self.getBatterylevel()
                 DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-                    if (Int(batteryLevel) ?? 100) <= 20 {
+                    var value = UserDefaults.standard.integer(forKey: "battery_alert_value")
+                    if value == 0 {
+                        value = 20
+                    }
+                    if (Int(batteryLevel) ?? 100) <= value {
                         let content = UNMutableNotificationContent()
                         content.title = "Low Battery"
                         content.subtitle = batteryLevel
