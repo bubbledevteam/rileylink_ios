@@ -43,6 +43,7 @@ public class RileyLinkDevice {
     private var fw_hw = "FW/HW"
     public var ledOn: Bool = false
     public var vibrationOn: Bool = false
+    public var voltage = ""
 
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
@@ -132,6 +133,11 @@ extension RileyLinkDevice {
         manager.orangeReadSet()
     }
     
+    public func orangeReadVDC() {
+        add(log: "orangeReadVDC")
+        manager.orangeReadVDC()
+    }
+    
     public func enableBLELEDs() {
         manager.setLEDMode(mode: .on)
     }
@@ -178,6 +184,7 @@ extension RileyLinkDevice {
         
         public var ledOn: Bool = false
         public var vibrationOn: Bool = false
+        public var voltage = ""
     }
 
     public func getStatus(_ completion: @escaping (_ status: Status) -> Void) {
@@ -193,7 +200,8 @@ extension RileyLinkDevice {
                 radioFirmwareVersion: self.radioFirmwareVersion,
                 fw_hw: self.fw_hw,
                 ledOn: self.ledOn,
-                vibrationOn: self.vibrationOn
+                vibrationOn: self.vibrationOn,
+                voltage: self.voltage
             ))
         }
     }
@@ -433,10 +441,10 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
             guard let data = characteristic.value, !data.isEmpty else { return }
-            if data.first == 9 {
-                guard let data = characteristic.value, data.count > 5 else { return }
-                if data[1] == 0xAA {
-                    fw_hw = "FW\(data[2]).\(data[3])/HW\(data[4]).\(data[5])"
+            if data.first == 0xbb {
+                guard let data = characteristic.value, data.count > 6 else { return }
+                if data[1] == 0x09, data[2] == 0xaa {
+                    fw_hw = "FW\(data[3]).\(data[4])/HW\(data[5]).\(data[6])"
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
             } else if data.first == 0xdd {
@@ -444,6 +452,12 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                 if data[1] == 0x01 {
                     ledOn = (data[3] != 0)
                     vibrationOn = (data[4] != 0)
+                    NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                } else if data[1] == 0x03 {
+                    guard var data = characteristic.value, data.count > 4 else { return }
+                    data = Data(data[3...4])
+                    let int = UInt16(bigEndian: data.withUnsafeBytes { $0.load(as: UInt16.self) })
+                    voltage = "\(Float(int) / 1000)"
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
             }

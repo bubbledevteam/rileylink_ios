@@ -127,6 +127,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 self.fw_hw = status.fw_hw
                 self.ledOn = status.ledOn
                 self.vibrationOn = status.vibrationOn
+                self.voltage = status.voltage
                 
                 self.tableView.reloadData()
             }
@@ -271,7 +272,13 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        orangeClose()
+        if redOn || yellowOn {
+            orangeAction(index: 3)
+        }
+        
+        if shakeOn {
+            orangeAction(index: 5)
+        }
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -315,8 +322,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     private enum Section: Int, CaseCountable {
         case device
         case alert
-        case commands
         case configureCommand
+        case commands
     }
     
     private enum AlertRow: Int, CaseCountable {
@@ -332,6 +339,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case frequency
         case battery
         case orl
+        case voltage
     }
     
     private enum CommandRow: Int, CaseCountable {
@@ -428,6 +436,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     var shakeOn = false
     private var ledOn: Bool = false
     private var vibrationOn: Bool = false
+    var voltage = ""
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: UITableViewCell
@@ -478,6 +487,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .orl:
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
                 cell.detailTextLabel?.text = fw_hw
+            case .voltage:
+                cell.textLabel?.text = NSLocalizedString("Voltage", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = voltage
             }
         case .alert:
             switch AlertRow(rawValue: indexPath.row)! {

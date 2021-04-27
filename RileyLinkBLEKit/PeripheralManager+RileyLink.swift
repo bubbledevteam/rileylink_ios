@@ -454,6 +454,21 @@ extension PeripheralManager {
         }
     }
     
+    func orangeReadVDC() {
+        perform { [self] (manager) in
+            do {
+                guard let characteristic = peripheral.getOrangeCharacteristic(.orange) else {
+                    throw PeripheralManagerError.unknownCharacteristic
+                }
+                let value = Data([0xdd, 0x03])
+                add(log: "write: \(value.hexadecimalString)")
+                try writeValue(value, for: characteristic, type: .withResponse, timeout: PeripheralManager.expectedMaxBLELatency)
+            } catch (_) {
+                add(log: "orangeReadSet failed")
+            }
+        }
+    }
+    
     func orangeClose() {
         perform { [self] (manager) in
             do {
