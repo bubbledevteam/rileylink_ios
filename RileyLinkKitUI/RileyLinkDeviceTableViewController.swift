@@ -167,6 +167,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             self.device.orangeReadSet()
         }
     }
+    
+    func orangeReadVDC() {
+        device.runSession(withName: "orange Read Set") { (session) in
+            self.device.orangeReadVDC()
+        }
+    }
 
     func writePSW() {
         device.runSession(withName: "Orange Action PSW") { (session) in
@@ -266,6 +272,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         writePSW()
         
         orangeReadSet()
+        
+        orangeReadVDC()
         
         orangeAction(index: 9)
     }
