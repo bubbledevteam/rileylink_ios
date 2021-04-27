@@ -448,8 +448,9 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
             } else if data.first == 0xdd {
-                guard let data = characteristic.value, data.count > 5 else { return }
+                guard let data = characteristic.value, data.count > 2 else { return }
                 if data[1] == 0x01 {
+                    guard let data = characteristic.value, data.count > 5 else { return }
                     ledOn = (data[3] != 0)
                     vibrationOn = (data[4] != 0)
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
