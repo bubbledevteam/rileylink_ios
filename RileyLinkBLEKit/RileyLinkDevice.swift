@@ -411,10 +411,13 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
             }
         case .responseCount?:
             // PeripheralManager.Configuration.valueUpdateMacros is responsible for handling this response.
+            self.resetBatteryAlert()
+            self.orangeReadVDC()
             break
         case .timerTick?:
             NotificationCenter.default.post(name: .DeviceTimerDidTick, object: self)
-
+            self.resetBatteryAlert()
+            self.orangeReadVDC()
             assertIdleListening(forceRestart: false)
         case .customName?, .firmwareVersion?, .ledMode?, .none:
             break
@@ -443,15 +446,16 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     voltage = String(format: "%.1f%", Float(int) / 1000)
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                     
-                    guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "battery_date")).addingTimeInterval(60 * 60),
-                          UserDefaults.standard.double(forKey: "voltage_alert_value") else { return }
+                    guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "voltage_date")).addingTimeInterval(60 * 60),
+                          UserDefaults.standard.double(forKey: "voltage_alert_value") != 0 else { return }
                     
+                    UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "voltage_date")
                     DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
                         let value = UserDefaults.standard.double(forKey: "voltage_alert_value")
-                        if (Double(voltage) ?? 100) <= value {
+                        if (Double(self.voltage) ?? 100) <= value {
                             let content = UNMutableNotificationContent()
                             content.title = "Low Voltage"
-                            content.subtitle = batteryLevel
+                            content.subtitle = self.voltage
                             let request = UNNotificationRequest.init(identifier: "Orange Low Voltage", content: content, trigger: nil)
                             UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
                         }
@@ -470,10 +474,7 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                 UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "battery_date")
                 let batteryLevel = self.getBatterylevel()
                 DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-                    var value = UserDefaults.standard.integer(forKey: "battery_alert_value")
-                    if value == 0 {
-                        value = 20
-                    }
+                    let value = UserDefaults.standard.integer(forKey: "battery_alert_value")
                     if (Int(batteryLevel) ?? 100) <= value {
                         let content = UNMutableNotificationContent()
                         content.title = "Low Battery"

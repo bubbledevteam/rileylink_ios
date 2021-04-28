@@ -425,11 +425,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 orangeAction(index: 1, open: sender.isOn)
                 vibrationOn = sender.isOn
             }
-        case .alert:
-            switch AlertRow(rawValue: sender.index)! {
-            case .battery:
-                UserDefaults.standard.setValue(sender.isOn, forKey: "battery_alert")
-            }
         default:
             break
         }
@@ -689,8 +684,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                     self.tableView.reloadData()
                 }
                 
-                let action7 = UIAlertAction.init(title: "3", style: .default) { _ in
-                    UserDefaults.standard.setValue(3, forKey: "voltage_alert_value")
+                let action7 = UIAlertAction.init(title: "3.0", style: .default) { _ in
+                    UserDefaults.standard.setValue(3.0, forKey: "voltage_alert_value")
                     self.tableView.reloadData()
                 }
                 alert.addAction(action)
