@@ -333,26 +333,6 @@ extension RileyLinkDevice {
         }
 
         manager.centralManager(central, didConnect: peripheral)
-        
-        if UserDefaults.standard.bool(forKey: "battery_alert") {
-            manager.queue.async {
-                let batteryLevel = self.getBatterylevel()
-                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
-                    var value = UserDefaults.standard.integer(forKey: "battery_alert_value")
-                    if value == 0 {
-                        value = 20
-                    }
-                    if (Int(batteryLevel) ?? 100) <= value {
-                        let content = UNMutableNotificationContent()
-                        content.title = "Low Battery"
-                        content.subtitle = batteryLevel
-                        let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
-                        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
-                    }
-                }
-            }
-        }
-
         NotificationCenter.default.post(name: .DeviceConnectionStateDidChange, object: self)
     }
 
@@ -425,6 +405,8 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     self.log.error("Skipping parsing characteristic value update due to missing BLE firmware version")
                 }
 
+                self.resetBatteryAlert()
+                self.orangeReadVDC()
                 self.assertIdleListening(forceRestart: true)
             }
         case .responseCount?:
@@ -458,12 +440,49 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     guard var data = characteristic.value, data.count > 4 else { return }
                     data = Data(data[3...4])
                     let int = UInt16(bigEndian: data.withUnsafeBytes { $0.load(as: UInt16.self) })
-                    voltage = "\(Float(int) / 1000)"
+                    voltage = String(format: "%.1f%", Float(int) / 1000)
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                    
+                    guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "battery_date")).addingTimeInterval(60 * 60),
+                          UserDefaults.standard.double(forKey: "voltage_alert_value") else { return }
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                        let value = UserDefaults.standard.double(forKey: "voltage_alert_value")
+                        if (Double(voltage) ?? 100) <= value {
+                            let content = UNMutableNotificationContent()
+                            content.title = "Low Voltage"
+                            content.subtitle = batteryLevel
+                            let request = UNNotificationRequest.init(identifier: "Orange Low Voltage", content: content, trigger: nil)
+                            UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+                        }
+                    }
                 }
             }
         default:
             break
+        }
+    }
+    
+    func resetBatteryAlert() {
+        guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "battery_date")).addingTimeInterval(60 * 60) else { return }
+        if UserDefaults.standard.integer(forKey: "battery_alert_value") != 0 {
+            manager.queue.async {
+                UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "battery_date")
+                let batteryLevel = self.getBatterylevel()
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                    var value = UserDefaults.standard.integer(forKey: "battery_alert_value")
+                    if value == 0 {
+                        value = 20
+                    }
+                    if (Int(batteryLevel) ?? 100) <= value {
+                        let content = UNMutableNotificationContent()
+                        content.title = "Low Battery"
+                        content.subtitle = batteryLevel
+                        let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
+                        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+                    }
+                }
+            }
         }
     }
 

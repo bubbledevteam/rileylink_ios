@@ -336,6 +336,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     
     private enum AlertRow: Int, CaseCountable {
         case battery
+        case voltage
     }
 
     private enum DeviceRow: Int, CaseCountable {
@@ -502,17 +503,25 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .alert:
             switch AlertRow(rawValue: indexPath.row)! {
             case .battery:
-                var value = 20
+                var value = "OFF"
                 let v = UserDefaults.standard.integer(forKey: "battery_alert_value")
                 if v != 0 {
-                    value = v
+                    value = "\(v)%"
                 }
                 
-                let text = "Low Battery Alert  \(value)%"
-                switchView?.isHidden = false
-                switchView?.isOn = UserDefaults.standard.bool(forKey: "battery_alert")
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString(text, comment: "The title of the cell showing battery level")
+                cell.accessoryType = .disclosureIndicator
+                cell.textLabel?.text = NSLocalizedString("Low Battery Alert", comment: "The title of the cell showing battery level")
+                cell.detailTextLabel?.text = "\(value)"
+            case .voltage:
+                var value = "OFF"
+                let v = UserDefaults.standard.double(forKey: "voltage_alert_value")
+                if v != 0 {
+                    value = String(format: "%.1f%", v)
+                }
+                
+                cell.accessoryType = .disclosureIndicator
+                cell.textLabel?.text = NSLocalizedString("Low Voltage Alert", comment: "The title of the cell showing voltage level")
+                cell.detailTextLabel?.text = "\(value)"
             }
         case .commands:
             cell.accessoryType = .disclosureIndicator
@@ -611,6 +620,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             switch AlertRow(rawValue: indexPath.row)! {
             case .battery:
                 let alert = UIAlertController.init(title: "Battery level Alert", message: nil, preferredStyle: .actionSheet)
+                
+                let action = UIAlertAction.init(title: "OFF", style: .default) { _ in
+                    UserDefaults.standard.setValue(0, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
                 let action1 = UIAlertAction.init(title: "20", style: .default) { _ in
                     UserDefaults.standard.setValue(20, forKey: "battery_alert_value")
                     self.tableView.reloadData()
@@ -620,8 +635,72 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                     UserDefaults.standard.setValue(30, forKey: "battery_alert_value")
                     self.tableView.reloadData()
                 }
+                
+                let action3 = UIAlertAction.init(title: "40", style: .default) { _ in
+                    UserDefaults.standard.setValue(40, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action4 = UIAlertAction.init(title: "50", style: .default) { _ in
+                    UserDefaults.standard.setValue(50, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                alert.addAction(action)
                 alert.addAction(action1)
                 alert.addAction(action2)
+                alert.addAction(action3)
+                alert.addAction(action4)
+                present(alert, animated: true, completion: nil)
+            case .voltage:
+                let alert = UIAlertController.init(title: "Voltage level Alert", message: nil, preferredStyle: .actionSheet)
+                
+                let action = UIAlertAction.init(title: "OFF", style: .default) { _ in
+                    UserDefaults.standard.setValue(0, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action1 = UIAlertAction.init(title: "2.4", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.4, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action2 = UIAlertAction.init(title: "2.5", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.5, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action3 = UIAlertAction.init(title: "2.6", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.6, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action4 = UIAlertAction.init(title: "2.7", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.7, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action5 = UIAlertAction.init(title: "2.8", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.8, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action6 = UIAlertAction.init(title: "2.9", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.9, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action7 = UIAlertAction.init(title: "3", style: .default) { _ in
+                    UserDefaults.standard.setValue(3, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                alert.addAction(action)
+                alert.addAction(action1)
+                alert.addAction(action2)
+                alert.addAction(action3)
+                alert.addAction(action4)
+                alert.addAction(action5)
+                alert.addAction(action6)
+                alert.addAction(action7)
                 present(alert, animated: true, completion: nil)
             }
         }
