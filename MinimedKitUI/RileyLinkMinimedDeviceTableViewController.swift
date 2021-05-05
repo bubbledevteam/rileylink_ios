@@ -338,6 +338,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case idleStatus
         case battery
         case orl
+        case voltage
     }
 
     private enum PumpRow: Int, CaseCountable {
@@ -505,6 +506,9 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             case .orl:
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
                 cell.detailTextLabel?.text = fw_hw
+            case .voltage:
+                cell.textLabel?.text = NSLocalizedString("Voltage", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = voltage
             }
         case .pump:
             switch PumpRow(rawValue: indexPath.row)! {
