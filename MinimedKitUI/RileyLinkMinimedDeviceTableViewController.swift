@@ -364,7 +364,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
 //            orangeAction(index: 3, open: sender.isOn)
 //        default:
 //            break
-        }
+//        }
     }
     
     private func cellForRow(_ row: DeviceRow) -> UITableViewCell? {
