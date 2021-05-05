@@ -28,6 +28,10 @@ public class RileyLinkCell: UITableViewCell {
         contentView.addSubview(switchView)
     }
     
+    public required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
     public override func layoutSubviews() {
         super.layoutSubviews()
         switchView.frame = CGRect(x: frame.width - 51 - 20, y: (frame.height - 31) / 2, width: 51, height: 31)
@@ -455,7 +459,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: RileyLinkCell
 
-        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as! RileyLinkCell {
+        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as? RileyLinkCell {
             cell = reusableCell
         } else {
             cell = RileyLinkCell(style: .value1, reuseIdentifier: CellIdentifier)
@@ -530,31 +534,31 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             
             switch CommandRow(rawValue: indexPath.row)! {
             case .yellow:
-                switchView?.isHidden = false
+                switchView.isHidden = false
                 cell.accessoryType = .none
-                switchView?.isOn = yellowOn
+                switchView.isOn = yellowOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
             case .red:
-                switchView?.isHidden = false
+                switchView.isHidden = false
                 cell.accessoryType = .none
-                switchView?.isOn = redOn
+                switchView.isOn = redOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
             case .shake:
-                switchView?.isHidden = false
-                switchView?.isOn = shakeOn
+                switchView.isHidden = false
+                switchView.isOn = shakeOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
             }
         case .configureCommand:
             switch ConfigureCommandRow(rawValue: indexPath.row)! {
             case .led:
-                switchView?.isHidden = false
-                switchView?.isOn = ledOn
+                switchView.isHidden = false
+                switchView.isOn = ledOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State LED", comment: "The title of the cell showing Stop Vibrator")
             case .vibration:
-                switchView?.isHidden = false
-                switchView?.isOn = vibrationOn
+                switchView.isHidden = false
+                switchView.isOn = vibrationOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }

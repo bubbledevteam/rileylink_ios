@@ -397,7 +397,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell: RileyLinkCell
 
-        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as! RileyLinkCell {
+        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as? RileyLinkCell {
             cell = reusableCell
         } else {
             cell = RileyLinkCell(style: .value1, reuseIdentifier: CellIdentifier)
