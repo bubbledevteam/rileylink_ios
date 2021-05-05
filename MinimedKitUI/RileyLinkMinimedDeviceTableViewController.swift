@@ -353,17 +353,17 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
 
     @objc
     func switchAction(sender: RileyLinkSwitch) {
-        switch CommandRow(rawValue: sender.index)! {
-        case .connectLed:
-            orangeAction(index: 4, open: sender.isOn)
-        case .connectVibration:
-            orangeAction(index: 5, open: sender.isOn)
-        case .disconnectLed:
-            orangeAction(index: 2, open: sender.isOn)
-        case .disconnectVibration:
-            orangeAction(index: 3, open: sender.isOn)
-        default:
-            break
+//        switch CommandRow(rawValue: sender.index)! {
+//        case .connectLed:
+//            orangeAction(index: 4, open: sender.isOn)
+//        case .connectVibration:
+//            orangeAction(index: 5, open: sender.isOn)
+//        case .disconnectLed:
+//            orangeAction(index: 2, open: sender.isOn)
+//        case .disconnectVibration:
+//            orangeAction(index: 3, open: sender.isOn)
+//        default:
+//            break
         }
     }
     
