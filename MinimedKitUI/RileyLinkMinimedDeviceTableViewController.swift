@@ -380,7 +380,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
     @objc
     func switchAction(sender: RileyLinkSwitch) {
         switch Section(rawValue: sender.section)! {
-        case .commands:
+        case .testCommands:
             switch TestCommandRow(rawValue: sender.index)! {
             case .yellow:
                 if sender.isOn {
@@ -598,7 +598,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             cell.accessoryType = .disclosureIndicator
             cell.detailTextLabel?.text = nil
             
-            switch CommandRow(rawValue: indexPath.row)! {
+            switch TestCommandRow(rawValue: indexPath.row)! {
             case .yellow:
                 switchView.isHidden = false
                 cell.accessoryType = .none
