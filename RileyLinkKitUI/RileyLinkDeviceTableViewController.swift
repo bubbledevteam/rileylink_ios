@@ -20,6 +20,20 @@ public class RileyLinkSwitch: UISwitch {
     public var section: Int = 0
 }
 
+public class RileyLinkCell: UITableViewCell {
+    public let switchView = RileyLinkSwitch()
+    
+    public override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        contentView.addSubview(switchView)
+    }
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        switchView.frame = CGRect(x: frame.width - 51 - 20, y: (frame.height - 31) / 2, width: 51, height: 31)
+    }
+}
+
 public class RileyLinkDeviceTableViewController: UITableViewController {
 
     private let log = OSLog(category: "RileyLinkDeviceTableViewController")
@@ -431,10 +445,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         tableView.reloadData()
     }
     
-    public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 45
-    }
-    
     var yellowOn = false
     var redOn = false
     var shakeOn = false
@@ -443,23 +453,19 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
     var voltage = ""
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell: UITableViewCell
+        let cell: RileyLinkCell
 
-        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) {
+        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as! RileyLinkCell {
             cell = reusableCell
         } else {
-            cell = UITableViewCell(style: .value1, reuseIdentifier: CellIdentifier)
-            let switchView = RileyLinkSwitch()
-            switchView.tag = 10000
-            switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
-            switchView.frame = CGRect(x: tableView.frame.width - 51 - 20, y: 7, width: 51, height: 31)
-            cell.contentView.addSubview(switchView)
+            cell = RileyLinkCell(style: .value1, reuseIdentifier: CellIdentifier)
+            cell.switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
         }
         
-        let switchView = cell.contentView.viewWithTag(10000) as? RileyLinkSwitch
-        switchView?.isHidden = true
-        switchView?.index = indexPath.row
-        switchView?.section = indexPath.section
+        let switchView = cell.switchView
+        switchView.isHidden = true
+        switchView.index = indexPath.row
+        switchView.section = indexPath.section
         
         cell.accessoryType = .none
 

@@ -349,15 +349,6 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case enableLED
         case discoverCommands
         case getStatistics
-        case yellow
-        case red
-        case off
-        case shake
-        case shakeOff
-        case disconnectLed
-        case disconnectVibration
-        case connectLed
-        case connectVibration
     }
 
     @objc
@@ -403,27 +394,19 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         }
     }
     
-    public override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 45
-    }
-
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell: UITableViewCell
+        let cell: RileyLinkCell
 
-        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) {
+        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as! RileyLinkCell {
             cell = reusableCell
         } else {
-            cell = UITableViewCell(style: .value1, reuseIdentifier: CellIdentifier)
-            let switchView = RileyLinkSwitch()
-            switchView.tag = 10000
-            switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
-            switchView.frame = CGRect(x: tableView.frame.width - 51 - 20, y: 7, width: 51, height: 31)
-            cell.contentView.addSubview(switchView)
+            cell = RileyLinkCell(style: .value1, reuseIdentifier: CellIdentifier)
+            cell.switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
         }
         
-        let switchView = cell.contentView.viewWithTag(10000) as? RileyLinkSwitch
-        switchView?.isHidden = true
-        switchView?.index = indexPath.row
+        let switchView = cell.switchView
+        switchView.isHidden = true
+        switchView.index = indexPath.row
         
         cell.accessoryType = .none
 
@@ -519,36 +502,6 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 
             case .getStatistics:
                 cell.textLabel?.text = LocalizedString("RileyLink Statistics", comment: "The title of the command to fetch RileyLink statistics")
-            case .yellow:
-                cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
-            case .red:
-                cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
-            case .off:
-                cell.textLabel?.text = NSLocalizedString("Turn Off LED", comment: "The title of the cell showing Turn Off LED")
-            case .shake:
-                cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
-            case .shakeOff:
-                cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
-            case .disconnectLed:
-                switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Disconnect Led", comment: "The title of the cell showing Stop Vibrator")
-            case .disconnectVibration:
-                switchView?.isHidden = false
-                switchView?.isOn = disconnectVibration
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Disconnect Vibrator", comment: "The title of the cell showing Stop Vibrator")
-            case .connectLed:
-                switchView?.isHidden = false
-                switchView?.isOn = connectLed
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Connect Led", comment: "The title of the cell showing Stop Vibrator")
-            case .connectVibration:
-                switchView?.isHidden = false
-                switchView?.isOn = connectVibration
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Connect Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }
         }
 
@@ -629,11 +582,6 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 vc = .discoverCommands(ops: ops, device: device)
             case .getStatistics:
                 vc = .getStatistics(ops: ops, device: device)
-            case .yellow: orangeAction(index: 1)
-            case .red: orangeAction(index: 2)
-            case .off: orangeAction(index: 3)
-            case .shake: orangeAction(index: 4)
-            case .shakeOff: orangeAction(index: 5)
             default:
                 break
             }
