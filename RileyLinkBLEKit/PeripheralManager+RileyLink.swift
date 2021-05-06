@@ -100,6 +100,27 @@ extension PeripheralManager.Configuration {
     }
 }
 
+fileprivate extension CBPeripheral {
+    func getBatteryCharacteristic(_ uuid: BatteryServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .battery) -> CBCharacteristic? {
+        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
+            return nil
+        }
+
+        return service.characteristics?.itemWithUUID(uuid.cbUUID)
+    }
+}
+
+fileprivate extension CBPeripheral {
+    func getOrangeCharacteristic(_ uuid: OrangeServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .orange) -> CBCharacteristic? {
+        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
+            return nil
+        }
+
+        return service.characteristics?.itemWithUUID(uuid.cbUUID)
+    }
+}
+
+
 
 fileprivate extension CBPeripheral {
     func getCharacteristicWithUUID(_ uuid: MainServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .main) -> CBCharacteristic? {

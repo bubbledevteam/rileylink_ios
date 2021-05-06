@@ -148,6 +148,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         }
     }
     
+
     func orangeClose() {
         device.runSession(withName: "Orange Action Close") { (session) in
             self.device.orangeClose()
@@ -692,6 +693,11 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
+            case .yellow: orangeAction(index: 0)
+            case .red: orangeAction(index: 1)
+            case .off: orangeAction(index: 2)
+            case .shake: orangeAction(index: 3)
+            case .shakeOff: orangeAction(index: 4)
             default:
                 break
             }
@@ -898,6 +904,14 @@ private extension UITableViewCell {
             detailTextLabel?.text = ""
         }
     }
+    
+    func setDetailBatteryLevel(_ batteryLevel: String?) {
+            if let unwrappedBatteryLevel = batteryLevel {
+                detailTextLabel?.text = unwrappedBatteryLevel + " %"
+            } else {
+                detailTextLabel?.text = ""
+            }
+        }
     
     func setAwakeUntil(_ awakeUntil: Date?, formatter: DateFormatter) {
         switch awakeUntil {

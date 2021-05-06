@@ -180,7 +180,7 @@ class MainViewController: RileyLinkSettingsViewController {
             show(vc, sender: indexPath)
         case .pump:
             if let pumpManager = deviceDataManager.pumpManager {
-                var settings = pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors)
+                var settings = pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors, allowedInsulinTypes: [])
                 settings.completionDelegate = self
                 present(settings, animated: true)
             } else {
@@ -224,7 +224,7 @@ extension MainViewController: CompletionDelegate {
 extension MainViewController: PumpManagerSetupViewControllerDelegate {
     func pumpManagerSetupViewController(_ pumpManagerSetupViewController: PumpManagerSetupViewController, didSetUpPumpManager pumpManager: PumpManagerUI) {
         deviceDataManager.pumpManager = pumpManager
-        show(pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors), sender: nil)
+        show(pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors, allowedInsulinTypes: []), sender: nil)
         tableView.reloadSections(IndexSet([Section.pump.rawValue]), with: .none)
     }
 }
