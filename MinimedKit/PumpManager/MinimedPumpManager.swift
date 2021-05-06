@@ -16,11 +16,18 @@ public protocol MinimedPumpManagerStateObserver: class {
 }
 
 public class MinimedPumpManager: RileyLinkPumpManager {
+    
+    public static let managerIdentifier = "Minimed500"
+    
+    public var managerIdentifier: String {
+        return MinimedPumpManager.managerIdentifier
+    }
+    
     public init(state: MinimedPumpManagerState, rileyLinkDeviceProvider: RileyLinkDeviceProvider, rileyLinkConnectionManager: RileyLinkConnectionManager? = nil, pumpOps: PumpOps? = nil) {
         self.lockedState = Locked(state)
 
         self.hkDevice = HKDevice(
-            name: type(of: self).managerIdentifier,
+            name: MinimedPumpManager.managerIdentifier,
             manufacturer: "Medtronic",
             model: state.pumpModel.rawValue,
             hardwareVersion: nil,
@@ -33,7 +40,7 @@ public class MinimedPumpManager: RileyLinkPumpManager {
         super.init(rileyLinkDeviceProvider: rileyLinkDeviceProvider, rileyLinkConnectionManager: rileyLinkConnectionManager)
 
         // Pump communication
-        let idleListeningEnabled = state.pumpModel.hasMySentry
+        let idleListeningEnabled = state.pumpModel.hasMySentry && state.useMySentry
         self.pumpOps = pumpOps ?? PumpOps(pumpSettings: state.pumpSettings, pumpState: state.pumpState, delegate: self)
 
         self.rileyLinkDeviceProvider.idleListeningState = idleListeningEnabled ? MinimedPumpManagerState.idleListeningEnabledDefaults : .disabled
@@ -629,8 +636,12 @@ extension MinimedPumpManager {
 
             delegate.pumpManager(self, hasNewPumpEvents: events, lastReconciliation: self.lastReconciliation, completion: { (error) in
                 // Called on an unknown queue by the delegate
-                self.log.error("Pump event storage failed: %{public}@", String(describing: error))
-                completion(MinimedPumpManagerError.storageFailure)
+                if let error = error {
+                    self.log.error("Pump event storage failed: %{public}@", String(describing: error))
+                    completion(MinimedPumpManagerError.storageFailure)
+                } else {
+                    completion(nil)
+                }
             })
 
         })
@@ -694,15 +705,30 @@ extension MinimedPumpManager {
             }
         }
     }
-    
+
+    /// Whether to use MySentry packets on capable pumps:
+    public var useMySentry: Bool {
+        get {
+            return state.useMySentry
+        }
+        set {
+            let oldValue = state.useMySentry
+            setState { (state) in
+                state.useMySentry = newValue
+            }
+            if oldValue != newValue {
+                let useIdleListening = state.pumpModel.hasMySentry && state.useMySentry
+                self.rileyLinkDeviceProvider.idleListeningState = useIdleListening ? MinimedPumpManagerState.idleListeningEnabledDefaults : .disabled
+            }
+        }
+    }
+
 }
 
 
 // MARK: - PumpManager
 extension MinimedPumpManager: PumpManager {
     
-    public static let managerIdentifier: String = "Minimed500"
-
     public static let localizedTitle = LocalizedString("Minimed 500/700 Series", comment: "Generic title of the minimed pump manager")
 
     public var localizedTitle: String {
@@ -738,6 +764,8 @@ extension MinimedPumpManager: PumpManager {
     public var pumpReservoirCapacity: Double {
         return Double(state.pumpModel.reservoirCapacity)
     }
+
+    public var isOnboarded: Bool { state.isOnboarded }
 
     public var lastReconciliation: Date? {
         return state.lastReconciliation
@@ -839,6 +867,12 @@ extension MinimedPumpManager: PumpManager {
     }
 
     // MARK: Methods
+
+    public func completeOnboard() {
+        setState({ (state) in
+            state.isOnboarded = true
+        })
+    }
 
     public func suspendDelivery(completion: @escaping (Error?) -> Void) {
         guard let insulinType = insulinType else {
@@ -1216,7 +1250,7 @@ extension MinimedPumpManager: CGMManager {
         return recents.sensorState
     }
     
-    public var cgmStatus: CGMManagerStatus {
+    public var cgmManagerStatus: CGMManagerStatus {
         return CGMManagerStatus(hasValidSensorSession: hasValidSensorSession)
     }
     

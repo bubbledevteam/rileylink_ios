@@ -132,26 +132,6 @@ fileprivate extension CBPeripheral {
     }
 }
 
-fileprivate extension CBPeripheral {
-    func getBatteryCharacteristic(_ uuid: BatteryServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .battery) -> CBCharacteristic? {
-        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
-            return nil
-        }
-
-        return service.characteristics?.itemWithUUID(uuid.cbUUID)
-    }
-}
-
-fileprivate extension CBPeripheral {
-    func getOrangeCharacteristic(_ uuid: OrangeServiceCharacteristicUUID, serviceUUID: RileyLinkServiceUUID = .orange) -> CBCharacteristic? {
-        guard let service = services?.itemWithUUID(serviceUUID.cbUUID) else {
-            return nil
-        }
-
-        return service.characteristics?.itemWithUUID(uuid.cbUUID)
-    }
-}
-
 
 extension CBCentralManager {
     func scanForPeripherals(withOptions options: [String: Any]? = nil) {

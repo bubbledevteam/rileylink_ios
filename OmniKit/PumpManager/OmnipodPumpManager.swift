@@ -80,6 +80,11 @@ extension OmnipodPumpManagerError: LocalizedError {
 }
 
 public class OmnipodPumpManager: RileyLinkPumpManager {
+    
+    public let managerIdentifier: String = "Omnipod"
+    
+    public let localizedTitle = LocalizedString("Omnipod", comment: "Generic title of the omnipod pump manager")
+    
     public init(state: OmnipodPumpManagerState, rileyLinkDeviceProvider: RileyLinkDeviceProvider, rileyLinkConnectionManager: RileyLinkConnectionManager? = nil) {
         self.lockedState = Locked(state)
         self.lockedPodComms = Locked(PodComms(podState: state.podState))
@@ -300,7 +305,7 @@ extension OmnipodPumpManager {
     private func device(for state: OmnipodPumpManagerState) -> HKDevice {
         if let podState = state.podState {
             return HKDevice(
-                name: type(of: self).managerIdentifier,
+                name: managerIdentifier,
                 manufacturer: "Insulet",
                 model: "Eros",
                 hardwareVersion: nil,
@@ -311,7 +316,7 @@ extension OmnipodPumpManager {
             )
         } else {
             return HKDevice(
-                name: type(of: self).managerIdentifier,
+                name: managerIdentifier,
                 manufacturer: "Insulet",
                 model: "Eros",
                 hardwareVersion: nil,
@@ -440,6 +445,18 @@ extension OmnipodPumpManager {
         set {
             setState { (state) in
                 state.confirmationBeeps = newValue
+            }
+        }
+    }
+
+    // Thread-safe
+    public var automaticBolusBeeps: Bool {
+        get {
+            return state.automaticBolusBeeps
+        }
+        set {
+            setState { (state) in
+                state.automaticBolusBeeps = newValue
             }
         }
     }
@@ -670,7 +687,7 @@ extension OmnipodPumpManager {
                 // Mock fault
                 //            let fault = try! DetailedStatus(encodedData: Data(hexadecimalString: "020d0000000e00c36a020703ff020900002899080082")!)
                 //            self.state.podState?.fault = fault
-                //            return .failure(PodCommsError.podFault(fault: fault))
+                //            return .failure(PumpManagerError.deviceState(PodCommsError.podFault(fault: fault)))
 
                 // Mock success
                 state.podState?.setupProgress = .completed
@@ -965,7 +982,7 @@ extension OmnipodPumpManager {
     public func readPodStatus(completion: @escaping (Result<DetailedStatus, Error>) -> Void) {
         // use hasSetupPod to be able to read pod info from a faulted Pod
         guard self.hasSetupPod else {
-            completion(.failure(PodCommsError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
 
@@ -1046,7 +1063,7 @@ extension OmnipodPumpManager {
     public func readPulseLog(completion: @escaping (Result<String, Error>) -> Void) {
         // use hasSetupPod to be able to read the pulse log from a faulted Pod
         guard self.hasSetupPod else {
-            completion(.failure(PodCommsError.noPodPaired))
+            completion(.failure(OmnipodPumpManagerError.noPodPaired))
             return
         }
         guard state.podState?.isFaulted == true || state.podState?.unfinalizedBolus?.scheduledCertainty == .uncertain || state.podState?.unfinalizedBolus?.isFinished != false else
@@ -1115,10 +1132,6 @@ extension OmnipodPumpManager {
 // MARK: - PumpManager
 extension OmnipodPumpManager: PumpManager {
 
-    public static let managerIdentifier: String = "Omnipod"
-
-    public static let localizedTitle = LocalizedString("Omnipod", comment: "Generic title of the omnipod pump manager")
-
     public var supportedBolusVolumes: [Double] {
         // 0.05 units for rates between 0.05-30U/hr
         // 0 is not a supported bolus volume
@@ -1156,6 +1169,8 @@ extension OmnipodPumpManager: PumpManager {
     public var pumpReservoirCapacity: Double {
         return Pod.reservoirCapacity
     }
+
+    public var isOnboarded: Bool { state.isOnboarded }
 
     public var lastReconciliation: Date? {
         return self.state.podState?.lastInsulinMeasurements?.validTime
@@ -1209,6 +1224,12 @@ extension OmnipodPumpManager: PumpManager {
 
     // MARK: Methods
 
+    public func completeOnboard() {
+        setState({ (state) in
+            state.isOnboarded = true
+        })
+    }
+
     public func suspendDelivery(completion: @escaping (Error?) -> Void) {
         guard self.hasActivePod else {
             completion(OmnipodPumpManagerError.noPodPaired)
@@ -1236,9 +1257,9 @@ extension OmnipodPumpManager: PumpManager {
                 state.suspendEngageState = .engaging
             })
 
-            // use confirmationBeepType here for confirmation beeps to avoid getting 3 beeps!
+            let suspendTime = TimeInterval(minutes: 15) // Place holder for future value from UI
             let beepType: BeepConfigType? = self.confirmationBeeps ? .beeeeeep : nil
-            let result = session.cancelDelivery(deliveryType: .all, confirmationBeepType: beepType)
+            let result = session.suspendDelivery(suspendTime: suspendTime, confirmationBeepType: beepType)
             switch result {
             case .certainFailure(let error):
                 completion(error)
@@ -1284,6 +1305,7 @@ extension OmnipodPumpManager: PumpManager {
                 let scheduleOffset = self.state.timeZone.scheduleOffset(forDate: Date())
                 let beep = self.confirmationBeeps
                 let _ = try session.resumeBasal(schedule: self.state.basalSchedule, scheduleOffset: scheduleOffset, acknowledgementBeep: beep, completionBeep: beep)
+                try session.cancelSuspendAlerts()
                 session.dosesForStorage() { (doses) -> Bool in
                     return self.store(doses: doses, in: session)
                 }
@@ -1433,8 +1455,14 @@ extension OmnipodPumpManager: PumpManager {
             let endDate = date.addingTimeInterval(enactUnits / Pod.bolusDeliveryRate)
             let dose = DoseEntry(type: .bolus, startDate: date, endDate: endDate, value: enactUnits, unit: .units, insulinType: self.insulinType, automatic: automatic)
 
-            let beep = self.confirmationBeeps && !automatic
-            let result = session.bolus(units: enactUnits, automatic: automatic, acknowledgementBeep: beep, completionBeep: beep)
+            // Use an acknowledgement beep if Confirmation Beeps are enabled and this a manual bolus or Automatic Bolus Beeps are enabled
+            let acknowledgementBeep = self.confirmationBeeps && (!automatic || self.automaticBolusBeeps)
+            let completionBeep = self.confirmationBeeps && !automatic
+
+            // Use an alternate 0x3F TimeInterval for denote an automatic bolus in the Omnipod Communications Log
+            let programReminderInterval: TimeInterval = automatic ? TimeInterval(minutes: 0x3F) : 0
+
+            let result = session.bolus(units: enactUnits, automatic: automatic, acknowledgementBeep: acknowledgementBeep, completionBeep: completionBeep, programReminderInterval: programReminderInterval)
             session.dosesForStorage() { (doses) -> Bool in
                 return self.store(doses: doses, in: session)
             }

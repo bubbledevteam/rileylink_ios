@@ -612,11 +612,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 }
 
                 show(vc, sender: indexPath)
-            case .yellow: orangeAction(index: 0)
-            case .red: orangeAction(index: 1)
-            case .off: orangeAction(index: 2)
-            case .shake: orangeAction(index: 3)
-            case .shakeOff: orangeAction(index: 4)
             default:
                 break
             }
