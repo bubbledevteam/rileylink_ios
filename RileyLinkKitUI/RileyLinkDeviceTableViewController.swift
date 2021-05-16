@@ -472,6 +472,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         switchView.section = indexPath.section
         
         cell.accessoryType = .none
+        cell.detailTextLabel?.text = nil
 
         switch Section(rawValue: indexPath.section)! {
         case .device:
@@ -506,6 +507,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 cell.detailTextLabel?.text = voltage
             }
         case .alert:
+            cell.accessoryType = .disclosureIndicator
+            cell.detailTextLabel?.text = nil
             switch AlertRow(rawValue: indexPath.row)! {
             case .battery:
                 var value = "OFF"
@@ -529,9 +532,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 cell.detailTextLabel?.text = "\(value)"
             }
         case .commands:
-            cell.accessoryType = .disclosureIndicator
-            cell.detailTextLabel?.text = nil
-            
             switch CommandRow(rawValue: indexPath.row)! {
             case .yellow:
                 switchView.isHidden = false

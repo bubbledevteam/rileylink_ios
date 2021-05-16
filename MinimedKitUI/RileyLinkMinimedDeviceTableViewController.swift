@@ -477,6 +477,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         switchView.index = indexPath.row
         
         cell.accessoryType = .none
+        cell.detailTextLabel?.text = nil
 
         switch Section(rawValue: indexPath.section)! {
         case .device:
@@ -599,9 +600,6 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 cell.detailTextLabel?.text = "\(value)"
             }
         case .testCommands:
-            cell.accessoryType = .disclosureIndicator
-            cell.detailTextLabel?.text = nil
-            
             switch TestCommandRow(rawValue: indexPath.row)! {
             case .yellow:
                 switchView.isHidden = false
@@ -624,12 +622,10 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
             case .led:
                 switchView.isHidden = false
                 switchView.isOn = ledOn
-                cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State LED", comment: "The title of the cell showing Stop Vibrator")
             case .vibration:
                 switchView.isHidden = false
                 switchView.isOn = vibrationOn
-                cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Enable Connection State Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }
         }
