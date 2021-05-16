@@ -621,6 +621,8 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
             }
         case .configureCommand:
+            cell.accessoryType = .disclosureIndicator
+            cell.detailTextLabel?.text = nil
             switch ConfigureCommandRow(rawValue: indexPath.row)! {
             case .led:
                 switchView.isHidden = false
