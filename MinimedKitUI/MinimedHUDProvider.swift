@@ -31,16 +31,19 @@ class MinimedHUDProvider: HUDProvider {
     }
 
     private let pumpManager: MinimedPumpManager
-    
-    private let insulinTintColor: Color
-    
-    private let guidanceColors: GuidanceColors
 
-    public init(pumpManager: MinimedPumpManager, insulinTintColor: Color, guidanceColors: GuidanceColors) {
+    private let bluetoothProvider: BluetoothProvider
+    
+    private let colorPalette: LoopUIColorPalette
+
+    private let allowedInsulinTypes: [InsulinType]
+    
+    public init(pumpManager: MinimedPumpManager, bluetoothProvider: BluetoothProvider, colorPalette: LoopUIColorPalette, allowedInsulinTypes: [InsulinType]) {
         self.pumpManager = pumpManager
+        self.bluetoothProvider = bluetoothProvider
         self.state = pumpManager.state
-        self.insulinTintColor = insulinTintColor
-        self.guidanceColors = guidanceColors
+        self.colorPalette = colorPalette
+        self.allowedInsulinTypes = allowedInsulinTypes
         pumpManager.stateObservers.insert(self, queue: .main)
     }
 
@@ -76,7 +79,7 @@ class MinimedHUDProvider: HUDProvider {
     }
 
     public func didTapOnHUDView(_ view: BaseHUDView) -> HUDTapAction? {
-        return HUDTapAction.presentViewController(pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors))
+        return HUDTapAction.presentViewController(pumpManager.settingsViewController(bluetoothProvider: bluetoothProvider, colorPalette: colorPalette, allowedInsulinTypes: allowedInsulinTypes))
     }
 
     public var hudViewRawState: HUDProvider.HUDViewRawState {

@@ -222,7 +222,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     
     private class func sectionList(_ podState: PodState?) -> [Section] {
         if let podState = podState {
-            if podState.unfinishedPairing {
+            if podState.unfinishedSetup {
                 return [.configuration, .rileyLinks]
             } else {
                 return [.status, .configuration, .rileyLinks, .podDetails, .diagnostics]
@@ -252,7 +252,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
     }
     
     private var configurationRows: [ConfigurationRow] {
-        if podState == nil || podState?.unfinishedPairing == true {
+        if podState == nil || podState?.unfinishedSetup == true {
             return [.replacePod]
         } else {
             return ConfigurationRow.allCases
@@ -264,6 +264,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
         case enableDisableConfirmationBeeps
         case reminder
         case timeZoneOffset
+        case insulinType
         case replacePod
     }
     
@@ -422,13 +423,20 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
                 }
                 cell.accessoryType = .disclosureIndicator
                 return cell
+            case .insulinType:
+                let cell = tableView.dequeueReusableCell(withIdentifier: SettingsTableViewCell.className, for: indexPath)
+                cell.prepareForReuse()
+                cell.textLabel?.text = "Insulin Type"
+                cell.detailTextLabel?.text = pumpManager.insulinType?.brandName
+                cell.accessoryType = .disclosureIndicator
+                return cell
             case .replacePod:
                 let cell = tableView.dequeueReusableCell(withIdentifier: TextButtonTableViewCell.className, for: indexPath) as! TextButtonTableViewCell
                 if podState == nil {
                     cell.textLabel?.text = LocalizedString("Pair New Pod", comment: "The title of the command to pair new pod")
                 } else if let podState = podState, podState.isFaulted {
                     cell.textLabel?.text = LocalizedString("Replace Pod Now", comment: "The title of the command to replace pod when there is a pod fault")
-                } else if let podState = podState, podState.unfinishedPairing {
+                } else if let podState = podState, podState.unfinishedSetup {
                     cell.textLabel?.text = LocalizedString("Finish pod setup", comment: "The title of the command to finish pod setup")
                 } else {
                     cell.textLabel?.text = LocalizedString("Replace Pod", comment: "The title of the command to replace pod")
@@ -599,13 +607,20 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
                 let vc = CommandResponseViewController.changeTime(pumpManager: pumpManager)
                 vc.title = sender?.textLabel?.text
                 show(vc, sender: indexPath)
+            case .insulinType:
+                let view = InsulinTypeSetting(initialValue: pumpManager.insulinType ?? .novolog, supportedInsulinTypes: InsulinType.allCases) { (newType) in
+                    self.pumpManager.insulinType = newType
+                }
+                let vc = DismissibleHostingController(rootView: view)
+                vc.title = LocalizedString("Insulin Type", comment: "Controller title for insulin type selection screen")
+                show(vc, sender: sender)
             case .replacePod:
                 let vc: UIViewController
-                if podState == nil || podState!.setupProgress.primingNeeded {
-                    vc = PodReplacementNavigationController.instantiateNewPodFlow(pumpManager)
-                } else if let podState = podState, podState.isFaulted {
+                if let podState = podState, podState.isFaulted {
                     vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager)
-                } else if let podState = podState, podState.unfinishedPairing {
+                } else if podState == nil || podState!.setupProgress.primingNeeded {
+                    vc = PodReplacementNavigationController.instantiateNewPodFlow(pumpManager)
+                } else if let podState = podState, podState.unfinishedSetup {
                     vc = PodReplacementNavigationController.instantiateInsertCannulaFlow(pumpManager)
                 } else {
                     vc = PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager)
@@ -647,7 +662,7 @@ class OmnipodSettingsViewController: RileyLinkSettingsViewController {
             switch configurationRows[indexPath.row] {
             case .suspendResume, .enableDisableConfirmationBeeps, .reminder:
                 break
-            case .timeZoneOffset, .replacePod:
+            case .timeZoneOffset, .replacePod, .insulinType:
                 tableView.reloadRows(at: [indexPath], with: .fade)
             }
         case .rileyLinks:

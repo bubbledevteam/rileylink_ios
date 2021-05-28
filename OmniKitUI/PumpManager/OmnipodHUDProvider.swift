@@ -14,7 +14,7 @@ import OmniKit
 
 internal class OmnipodHUDProvider: NSObject, HUDProvider, PodStateObserver {
     var managerIdentifier: String {
-        return OmnipodPumpManager.managerIdentifier
+        return pumpManager.managerIdentifier
     }
     
     private var podState: PodState? {
@@ -48,16 +48,19 @@ internal class OmnipodHUDProvider: NSObject, HUDProvider, PodStateObserver {
             }
         }
     }
+
+    private let bluetoothProvider: BluetoothProvider
     
-    private let insulinTintColor: Color
+    private let colorPalette: LoopUIColorPalette
     
-    private let guidanceColors: GuidanceColors
+    private let allowedInsulinTypes: [InsulinType]
     
-    public init(pumpManager: OmnipodPumpManager, insulinTintColor: Color, guidanceColors: GuidanceColors) {
+    public init(pumpManager: OmnipodPumpManager, bluetoothProvider: BluetoothProvider, colorPalette: LoopUIColorPalette, allowedInsulinTypes: [InsulinType]) {
         self.pumpManager = pumpManager
+        self.bluetoothProvider = bluetoothProvider
         self.podState = pumpManager.state.podState
-        self.insulinTintColor = insulinTintColor
-        self.guidanceColors = guidanceColors
+        self.colorPalette = colorPalette
+        self.allowedInsulinTypes = allowedInsulinTypes
         super.init()
         self.pumpManager.addPodStateObserver(self, queue: .main)
     }
@@ -94,7 +97,7 @@ internal class OmnipodHUDProvider: NSObject, HUDProvider, PodStateObserver {
         if let podState = self.podState, podState.isFaulted {
             return HUDTapAction.presentViewController(PodReplacementNavigationController.instantiatePodReplacementFlow(pumpManager))
         } else {
-            return HUDTapAction.presentViewController(pumpManager.settingsViewController(insulinTintColor: insulinTintColor, guidanceColors: guidanceColors))
+            return HUDTapAction.presentViewController(pumpManager.settingsViewController(bluetoothProvider: bluetoothProvider, colorPalette: colorPalette, allowedInsulinTypes: allowedInsulinTypes))
         }
     }
     
