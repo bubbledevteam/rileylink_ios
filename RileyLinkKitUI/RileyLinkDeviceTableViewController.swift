@@ -17,6 +17,25 @@ let CellIdentifier = "Cell"
 public class RileyLinkSwitch: UISwitch {
     
     public var index: Int = 0
+    public var section: Int = 0
+}
+
+public class RileyLinkCell: UITableViewCell {
+    public let switchView = RileyLinkSwitch()
+    
+    public override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        contentView.addSubview(switchView)
+    }
+    
+    public required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
+    public override func layoutSubviews() {
+        super.layoutSubviews()
+        switchView.frame = CGRect(x: frame.width - 51 - 20, y: (frame.height - 31) / 2, width: 51, height: 31)
+    }
 }
 
 public class RileyLinkDeviceTableViewController: UITableViewController {
@@ -47,12 +66,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
     
-    private var disconnectLed: Bool = false
-    private var disconnectVibration: Bool = false
-    
-    private var connectLed: Bool = false
-    private var connectVibration: Bool = false
-    
     private var uptime: TimeInterval? {
         didSet {
             guard isViewLoaded else {
@@ -72,7 +85,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             cellForRow(.battery)?.setDetailBatteryLevel(battery)
         }
     }
-    
     
     private var frequency: Measurement<UnitFrequency>? {
         didSet {
@@ -130,10 +142,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             DispatchQueue.main.async {
                 self.firmwareVersion = status.firmwareDescription
                 self.fw_hw = status.fw_hw
-                self.connectLed = status.connectLed
-                self.connectVibration = status.connectVibration
-                self.disconnectLed = status.disconnectLed
-                self.disconnectVibration = status.disconnectVibration
+                self.ledOn = status.ledOn
+                self.vibrationOn = status.vibrationOn
+                self.voltage = status.voltage
                 
                 self.tableView.reloadData()
             }
@@ -173,6 +184,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             self.device.orangeReadSet()
         }
     }
+    
+    func orangeReadVDC() {
+        device.runSession(withName: "orange Read Set") { (session) in
+            self.device.orangeReadVDC()
+        }
+    }
 
     func writePSW() {
         device.runSession(withName: "Orange Action PSW") { (session) in
@@ -192,7 +209,6 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         }
     }
 
-    
     func updateFrequency() {
 
         device.runSession(withName: "Get base frequency") { (session) in
@@ -271,14 +287,22 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         
         writePSW()
         
-        orangeAction(index: 9)
-        
         orangeReadSet()
+        
+        orangeReadVDC()
+        
+        orangeAction(index: 9)
     }
     
     public override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        orangeClose()
+        if redOn || yellowOn {
+            orangeAction(index: 3)
+        }
+        
+        if shakeOn {
+            orangeAction(index: 5)
+        }
     }
     
     public override func viewWillDisappear(_ animated: Bool) {
@@ -321,7 +345,14 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
 
     private enum Section: Int, CaseCountable {
         case device
+        case alert
+        case configureCommand
         case commands
+    }
+    
+    private enum AlertRow: Int, CaseCountable {
+        case battery
+        case voltage
     }
 
     private enum DeviceRow: Int, CaseCountable {
@@ -333,18 +364,18 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case frequency
         case battery
         case orl
+        case voltage
     }
     
     private enum CommandRow: Int, CaseCountable {
         case yellow
         case red
-        case off
         case shake
-        case shakeOff
-        case disconnectLed
-        case disconnectVibration
-        case connectLed
-        case connectVibration
+    }
+    
+    private enum ConfigureCommandRow: Int, CaseCountable {
+        case led
+        case vibration
     }
 
     private func cellForRow(_ row: DeviceRow) -> UITableViewCell? {
@@ -365,43 +396,78 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             return DeviceRow.count
         case .commands:
             return CommandRow.count
+        case .configureCommand:
+            return ConfigureCommandRow.count
+        case .alert:
+            return AlertRow.count
         }
     }
     
     @objc
     func switchAction(sender: RileyLinkSwitch) {
-        switch CommandRow(rawValue: sender.index)! {
-        case .connectLed:
-            orangeAction(index: 4, open: sender.isOn)
-        case .connectVibration:
-            orangeAction(index: 5, open: sender.isOn)
-        case .disconnectLed:
-            orangeAction(index: 2, open: sender.isOn)
-        case .disconnectVibration:
-            orangeAction(index: 3, open: sender.isOn)
+        switch Section(rawValue: sender.section)! {
+        case .commands:
+            switch CommandRow(rawValue: sender.index)! {
+            case .yellow:
+                if sender.isOn {
+                    orangeAction(index: 1)
+                } else {
+                    orangeAction(index: 3)
+                }
+                yellowOn = sender.isOn
+                redOn = false
+            case .red:
+                if sender.isOn {
+                    orangeAction(index: 2)
+                } else {
+                    orangeAction(index: 3)
+                }
+                yellowOn = false
+                redOn = sender.isOn
+            case .shake:
+                if sender.isOn {
+                    orangeAction(index: 4)
+                } else {
+                    orangeAction(index: 5)
+                }
+                shakeOn = sender.isOn
+            }
+        case .configureCommand:
+            switch ConfigureCommandRow(rawValue: sender.index)! {
+            case .led:
+                orangeAction(index: 0, open: sender.isOn)
+                ledOn = sender.isOn
+            case .vibration:
+                orangeAction(index: 1, open: sender.isOn)
+                vibrationOn = sender.isOn
+            }
         default:
             break
         }
+        tableView.reloadData()
     }
+    
+    var yellowOn = false
+    var redOn = false
+    var shakeOn = false
+    private var ledOn: Bool = false
+    private var vibrationOn: Bool = false
+    var voltage = ""
 
     public override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell: UITableViewCell
+        let cell: RileyLinkCell
 
-        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) {
+        if let reusableCell = tableView.dequeueReusableCell(withIdentifier: CellIdentifier) as? RileyLinkCell {
             cell = reusableCell
         } else {
-            cell = UITableViewCell(style: .value1, reuseIdentifier: CellIdentifier)
-            let switchView = RileyLinkSwitch()
-            switchView.tag = 10000
-            switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
-            let height = self.tableView(tableView, heightForRowAt: indexPath)
-            switchView.frame = CGRect(x: 0, y: (height - 31) / 2, width: 49, height: 31)
-            cell.contentView.addSubview(switchView)
+            cell = RileyLinkCell(style: .value1, reuseIdentifier: CellIdentifier)
+            cell.switchView.addTarget(self, action: #selector(switchAction(sender:)), for: .valueChanged)
         }
         
-        let switchView = cell.contentView.viewWithTag(10000) as? RileyLinkSwitch
-        switchView?.isHidden = true
-        switchView?.index = indexPath.row
+        let switchView = cell.switchView
+        switchView.isHidden = true
+        switchView.index = indexPath.row
+        switchView.section = indexPath.section
         
         cell.accessoryType = .none
 
@@ -433,6 +499,32 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             case .orl:
                 cell.textLabel?.text = NSLocalizedString("ORL", comment: "The title of the cell showing ORL")
                 cell.detailTextLabel?.text = fw_hw
+            case .voltage:
+                cell.textLabel?.text = NSLocalizedString("Voltage", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = voltage
+            }
+        case .alert:
+            switch AlertRow(rawValue: indexPath.row)! {
+            case .battery:
+                var value = "OFF"
+                let v = UserDefaults.standard.integer(forKey: "battery_alert_value")
+                if v != 0 {
+                    value = "\(v)%"
+                }
+                
+                cell.accessoryType = .disclosureIndicator
+                cell.textLabel?.text = NSLocalizedString("Low Battery Alert", comment: "The title of the cell showing battery level")
+                cell.detailTextLabel?.text = "\(value)"
+            case .voltage:
+                var value = "OFF"
+                let v = UserDefaults.standard.double(forKey: "voltage_alert_value")
+                if v != 0 {
+                    value = String(format: "%.1f%", v)
+                }
+                
+                cell.accessoryType = .disclosureIndicator
+                cell.textLabel?.text = NSLocalizedString("Low Voltage Alert", comment: "The title of the cell showing voltage level")
+                cell.detailTextLabel?.text = "\(value)"
             }
         case .commands:
             cell.accessoryType = .disclosureIndicator
@@ -440,35 +532,33 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             
             switch CommandRow(rawValue: indexPath.row)! {
             case .yellow:
+                switchView.isHidden = false
+                cell.accessoryType = .none
+                switchView.isOn = yellowOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Yellow LED", comment: "The title of the cell showing Lighten Yellow LED")
             case .red:
+                switchView.isHidden = false
+                cell.accessoryType = .none
+                switchView.isOn = redOn
                 cell.textLabel?.text = NSLocalizedString("Lighten Red LED", comment: "The title of the cell showing Lighten Red LED")
-            case .off:
-                cell.textLabel?.text = NSLocalizedString("Turn Off LED", comment: "The title of the cell showing Turn Off LED")
             case .shake:
+                switchView.isHidden = false
+                switchView.isOn = shakeOn
+                cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
-            case .shakeOff:
-                cell.textLabel?.text = NSLocalizedString("Stop Vibrator", comment: "The title of the cell showing Stop Vibrator")
-            case .disconnectLed:
-                switchView?.isHidden = false
-                switchView?.isOn = disconnectLed
+            }
+        case .configureCommand:
+            switch ConfigureCommandRow(rawValue: indexPath.row)! {
+            case .led:
+                switchView.isHidden = false
+                switchView.isOn = ledOn
                 cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Disconnect Led", comment: "The title of the cell showing Stop Vibrator")
-            case .disconnectVibration:
-                switchView?.isHidden = false
-                switchView?.isOn = disconnectVibration
+                cell.textLabel?.text = NSLocalizedString("Enable Connection State LED", comment: "The title of the cell showing Stop Vibrator")
+            case .vibration:
+                switchView.isHidden = false
+                switchView.isOn = vibrationOn
                 cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Disconnect Vibrator", comment: "The title of the cell showing Stop Vibrator")
-            case .connectLed:
-                switchView?.isHidden = false
-                switchView?.isOn = connectLed
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Connect Led", comment: "The title of the cell showing Stop Vibrator")
-            case .connectVibration:
-                switchView?.isHidden = false
-                switchView?.isOn = connectVibration
-                cell.accessoryType = .none
-                cell.textLabel?.text = NSLocalizedString("Connect Vibrator", comment: "The title of the cell showing Stop Vibrator")
+                cell.textLabel?.text = NSLocalizedString("Enable Connection State Vibrator", comment: "The title of the cell showing Stop Vibrator")
             }
         }
 
@@ -480,7 +570,11 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .device:
             return LocalizedString("Device", comment: "The title of the section describing the device")
         case .commands:
-            return LocalizedString("Commands", comment: "The title of the section describing commands")
+            return LocalizedString("Test Commands", comment: "The title of the section describing commands")
+        case .configureCommand:
+            return LocalizedString("Configure Commands", comment: "The title of the section describing commands")
+        case .alert:
+            return LocalizedString("Alert", comment: "The title of the section describing commands")
         }
     }
 
@@ -497,6 +591,10 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             }
         case .commands:
             return device.peripheralState == .connected
+        case .configureCommand:
+            return device.peripheralState == .connected
+        case .alert:
+            return true
         }
     }
 
@@ -518,16 +616,96 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 break
             }
         case .commands:
-            switch CommandRow(rawValue: indexPath.row)! {
-            case .yellow: orangeAction(index: 1)
-            case .red: orangeAction(index: 2)
-            case .off: orangeAction(index: 3)
-            case .shake: orangeAction(index: 4)
-            case .shakeOff: orangeAction(index: 5)
-            default:
-                break
-            }
             break
+        case .configureCommand:
+            break
+        case .alert:
+            switch AlertRow(rawValue: indexPath.row)! {
+            case .battery:
+                let alert = UIAlertController.init(title: "Battery level Alert", message: nil, preferredStyle: .actionSheet)
+                
+                let action = UIAlertAction.init(title: "OFF", style: .default) { _ in
+                    UserDefaults.standard.setValue(0, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action1 = UIAlertAction.init(title: "20", style: .default) { _ in
+                    UserDefaults.standard.setValue(20, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action2 = UIAlertAction.init(title: "30", style: .default) { _ in
+                    UserDefaults.standard.setValue(30, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action3 = UIAlertAction.init(title: "40", style: .default) { _ in
+                    UserDefaults.standard.setValue(40, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action4 = UIAlertAction.init(title: "50", style: .default) { _ in
+                    UserDefaults.standard.setValue(50, forKey: "battery_alert_value")
+                    self.tableView.reloadData()
+                }
+                alert.addAction(action)
+                alert.addAction(action1)
+                alert.addAction(action2)
+                alert.addAction(action3)
+                alert.addAction(action4)
+                present(alert, animated: true, completion: nil)
+            case .voltage:
+                let alert = UIAlertController.init(title: "Voltage level Alert", message: nil, preferredStyle: .actionSheet)
+                
+                let action = UIAlertAction.init(title: "OFF", style: .default) { _ in
+                    UserDefaults.standard.setValue(0, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action1 = UIAlertAction.init(title: "2.4", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.4, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action2 = UIAlertAction.init(title: "2.5", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.5, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action3 = UIAlertAction.init(title: "2.6", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.6, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action4 = UIAlertAction.init(title: "2.7", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.7, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action5 = UIAlertAction.init(title: "2.8", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.8, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action6 = UIAlertAction.init(title: "2.9", style: .default) { _ in
+                    UserDefaults.standard.setValue(2.9, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                
+                let action7 = UIAlertAction.init(title: "3.0", style: .default) { _ in
+                    UserDefaults.standard.setValue(3.0, forKey: "voltage_alert_value")
+                    self.tableView.reloadData()
+                }
+                alert.addAction(action)
+                alert.addAction(action1)
+                alert.addAction(action2)
+                alert.addAction(action3)
+                alert.addAction(action4)
+                alert.addAction(action5)
+                alert.addAction(action6)
+                alert.addAction(action7)
+                present(alert, animated: true, completion: nil)
+            }
         }
     }
 }

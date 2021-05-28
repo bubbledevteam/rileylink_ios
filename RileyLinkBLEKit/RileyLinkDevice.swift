@@ -41,11 +41,9 @@ public class RileyLinkDevice {
     private var lock = os_unfair_lock()
     
     private var fw_hw = "FW/HW"
-    private var disconnectLed: Bool = false
-    private var disconnectVibration: Bool = false
-    
-    private var connectLed: Bool = false
-    private var connectVibration: Bool = false
+    public var ledOn: Bool = false
+    public var vibrationOn: Bool = false
+    public var voltage = ""
 
     /// The queue used to serialize sessions and observe when they've drained
     private let sessionQueue: OperationQueue = {
@@ -126,13 +124,18 @@ extension RileyLinkDevice {
     }
     
     public func orangeClose() {
-        add(log: "orangeWritePwd")
+        add(log: "orangeClose")
         manager.orangeClose()
     }
     
     public func orangeReadSet() {
         add(log: "orangeReadSet")
         manager.orangeReadSet()
+    }
+    
+    public func orangeReadVDC() {
+        add(log: "orangeReadVDC")
+        manager.orangeReadVDC()
     }
     
     public func enableBLELEDs() {
@@ -179,11 +182,9 @@ extension RileyLinkDevice {
         
         public let fw_hw: String?
         
-        public let disconnectLed: Bool
-        public let disconnectVibration: Bool
-        
-        public let connectLed: Bool
-        public let connectVibration: Bool
+        public var ledOn: Bool = false
+        public var vibrationOn: Bool = false
+        public var voltage = ""
     }
 
     public func getStatus(_ completion: @escaping (_ status: Status) -> Void) {
@@ -198,10 +199,9 @@ extension RileyLinkDevice {
                 bleFirmwareVersion: self.bleFirmwareVersion,
                 radioFirmwareVersion: self.radioFirmwareVersion,
                 fw_hw: self.fw_hw,
-                disconnectLed: self.disconnectLed,
-                disconnectVibration: self.disconnectVibration,
-                connectLed: self.connectLed,
-                connectVibration: self.connectVibration
+                ledOn: self.ledOn,
+                vibrationOn: self.vibrationOn,
+                voltage: self.voltage
             ))
         }
     }
@@ -333,7 +333,6 @@ extension RileyLinkDevice {
         }
 
         manager.centralManager(central, didConnect: peripheral)
-
         NotificationCenter.default.post(name: .DeviceConnectionStateDidChange, object: self)
     }
 
@@ -406,14 +405,19 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
                     self.log.error("Skipping parsing characteristic value update due to missing BLE firmware version")
                 }
 
+                self.resetBatteryAlert()
+                self.orangeReadVDC()
                 self.assertIdleListening(forceRestart: true)
             }
         case .responseCount?:
             // PeripheralManager.Configuration.valueUpdateMacros is responsible for handling this response.
+            self.resetBatteryAlert()
+            self.orangeReadVDC()
             break
         case .timerTick?:
             NotificationCenter.default.post(name: .DeviceTimerDidTick, object: self)
-
+            self.resetBatteryAlert()
+            self.orangeReadVDC()
             assertIdleListening(forceRestart: false)
         case .customName?, .firmwareVersion?, .ledMode?, .none:
             break
@@ -421,17 +425,65 @@ extension RileyLinkDevice: PeripheralManagerDelegate {
         
         switch OrangeServiceCharacteristicUUID(rawValue: characteristic.uuid.uuidString) {
         case .orange, .orangeNotif:
-            guard let data = characteristic.value, data.count > 5 else { return }
-            if data.first == 9 {
-                if data[1] == 0xAA {
-                    fw_hw = "FW\(data[2]).\(data[3])/HW\(data[4]).\(data[5])"
+            guard let data = characteristic.value, !data.isEmpty else { return }
+            if data.first == 0xbb {
+                guard let data = characteristic.value, data.count > 6 else { return }
+                if data[1] == 0x09, data[2] == 0xaa {
+                    fw_hw = "FW\(data[3]).\(data[4])/HW\(data[5]).\(data[6])"
                     NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
                 }
-            } else if data.first == 0xbb, data[1] == 0x0c {
-                manager.setDatas = [UInt8](data)
+            } else if data.first == 0xdd {
+                guard let data = characteristic.value, data.count > 2 else { return }
+                if data[1] == 0x01 {
+                    guard let data = characteristic.value, data.count > 5 else { return }
+                    ledOn = (data[3] != 0)
+                    vibrationOn = (data[4] != 0)
+                    NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                } else if data[1] == 0x03 {
+                    guard var data = characteristic.value, data.count > 4 else { return }
+                    data = Data(data[3...4])
+                    let int = UInt16(bigEndian: data.withUnsafeBytes { $0.load(as: UInt16.self) })
+                    voltage = String(format: "%.1f%", Float(int) / 1000)
+                    NotificationCenter.default.post(name: .DeviceFW_HWChange, object: self)
+                    
+                    guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "voltage_date")).addingTimeInterval(60 * 60),
+                          UserDefaults.standard.double(forKey: "voltage_alert_value") != 0 else { return }
+                    
+                    UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "voltage_date")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                        let value = UserDefaults.standard.double(forKey: "voltage_alert_value")
+                        if (Double(self.voltage) ?? 100) <= value {
+                            let content = UNMutableNotificationContent()
+                            content.title = "Low Voltage"
+                            content.subtitle = self.voltage
+                            let request = UNNotificationRequest.init(identifier: "Orange Low Voltage", content: content, trigger: nil)
+                            UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+                        }
+                    }
+                }
             }
         default:
             break
+        }
+    }
+    
+    func resetBatteryAlert() {
+        guard Date() > Date(timeIntervalSince1970: UserDefaults.standard.double(forKey: "battery_date")).addingTimeInterval(60 * 60) else { return }
+        if UserDefaults.standard.integer(forKey: "battery_alert_value") != 0 {
+            manager.queue.async {
+                UserDefaults.standard.setValue(Date().timeIntervalSince1970, forKey: "battery_date")
+                let batteryLevel = self.getBatterylevel()
+                DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
+                    let value = UserDefaults.standard.integer(forKey: "battery_alert_value")
+                    if (Int(batteryLevel) ?? 100) <= value {
+                        let content = UNMutableNotificationContent()
+                        content.title = "Low Battery"
+                        content.subtitle = batteryLevel
+                        let request = UNNotificationRequest.init(identifier: "Orange Low Battery", content: content, trigger: nil)
+                        UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+                    }
+                }
+            }
         }
     }
 
