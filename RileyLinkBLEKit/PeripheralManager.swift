@@ -97,7 +97,7 @@ extension PeripheralManager {
     }
 }
 
-protocol PeripheralManagerDelegate: class {
+protocol PeripheralManagerDelegate: AnyObject {
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic)
     
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic)
