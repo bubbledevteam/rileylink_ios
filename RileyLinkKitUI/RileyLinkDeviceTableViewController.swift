@@ -470,6 +470,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         switchView.section = indexPath.section
         
         cell.accessoryType = .none
+        cell.detailTextLabel?.text = nil
 
         switch Section(rawValue: indexPath.section)! {
         case .device:

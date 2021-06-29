@@ -478,6 +478,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         switchView.index = indexPath.row
         
         cell.accessoryType = .none
+        cell.detailTextLabel?.text = nil
 
         switch Section(rawValue: indexPath.section)! {
         case .device:
