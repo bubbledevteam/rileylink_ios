@@ -371,6 +371,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case yellow
         case red
         case shake
+        case orangePro
     }
     
     private enum ConfigureCommandRow: Int, CaseCountable {
@@ -395,7 +396,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .device:
             return DeviceRow.count
         case .commands:
-            return CommandRow.count
+            return CommandRow.count - (device.isOrangePro ? 0 : 1)
         case .configureCommand:
             return ConfigureCommandRow.count
         case .alert:
@@ -547,6 +548,9 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 switchView.isOn = shakeOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
+            case .orangePro:
+                cell.textLabel?.text = NSLocalizedString("Find Devices", comment: "The title of the cell showing ORL")
+                cell.detailTextLabel?.text = nil
             }
         case .configureCommand:
             switch ConfigureCommandRow(rawValue: indexPath.row)! {
@@ -617,7 +621,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                 break
             }
         case .commands:
-            break
+            switch CommandRow(rawValue: indexPath.row)! {
+            case .orangePro:
+                device.manager.findDevices()
+            default:
+                break
+            }
         case .configureCommand:
             break
         case .alert:
