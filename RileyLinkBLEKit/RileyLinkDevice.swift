@@ -142,6 +142,11 @@ extension RileyLinkDevice {
         manager.orangeReadVDC()
     }
     
+    public func findDevices() {
+        add(log: "findDevices")
+        manager.findDevices()
+    }
+    
     public func enableBLELEDs() {
         manager.setLEDMode(mode: .on)
     }
