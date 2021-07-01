@@ -77,6 +77,10 @@ extension RileyLinkDevice {
     public var name: String? {
         return manager.peripheral.name
     }
+    
+    public var isOrangePro: Bool {
+        name?.lowercased() == "orangepro"
+    }
 
     public var deviceURI: String {
         return "rileylink://\(name ?? peripheralIdentifier.uuidString)"

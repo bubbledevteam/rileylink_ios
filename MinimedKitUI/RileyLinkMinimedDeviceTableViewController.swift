@@ -372,6 +372,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case yellow
         case red
         case shake
+        case orangePro
     }
     
     private enum AlertRow: Int, CaseCountable {
@@ -450,7 +451,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case .configureCommand:
             return ConfigureCommandRow.count
         case .testCommands:
-            return TestCommandRow.count
+            return TestCommandRow.count - (device.isOrangePro ? 0 : 1)
         case .alert:
             return AlertRow.count
         }
@@ -619,6 +620,9 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
                 switchView.isOn = shakeOn
                 cell.accessoryType = .none
                 cell.textLabel?.text = NSLocalizedString("Test Vibrator", comment: "The title of the cell showing Test Vibrator")
+            case .orangePro:
+                cell.textLabel?.text = NSLocalizedString("Find Devices", comment: "The title of the cell showing Find Devices")
+                cell.detailTextLabel?.text = nil
             }
         case .configureCommand:
             cell.accessoryType = .disclosureIndicator
@@ -738,7 +742,12 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         case .pump:
             break
         case .testCommands:
-            break
+            switch TestCommandRow(rawValue: indexPath.row)! {
+            case .orangePro:
+                device.manager.findDevices()
+            default:
+                break
+            }
         case .configureCommand:
             break
         case .alert:
