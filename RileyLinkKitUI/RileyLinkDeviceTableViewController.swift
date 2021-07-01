@@ -208,6 +208,12 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
             self.device.orangeSetAction(index: index, open: open)
         }
     }
+    
+    func findDevices() {
+        device.runSession(withName: "Find Devices") { (session) in
+            self.device.findDevices()
+        }
+    }
 
     func updateFrequency() {
 
@@ -239,30 +245,30 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         
         notificationObservers = [
             center.addObserver(forName: .DeviceNameDidChange, object: device, queue: mainQueue) { [weak self] (note) -> Void in
-                if let cell = self?.cellForRow(.customName) {
-                    cell.detailTextLabel?.text = self?.device.name
-                }
-
-                self?.title = self?.device.name
-            },
+            if let cell = self?.cellForRow(.customName) {
+                cell.detailTextLabel?.text = self?.device.name
+            }
+            self?.title = self?.device.name
+            self?.tableView.reloadData()
+        },
             center.addObserver(forName: .DeviceConnectionStateDidChange, object: device, queue: mainQueue) { [weak self] (note) -> Void in
-                if let cell = self?.cellForRow(.connection) {
-                    cell.detailTextLabel?.text = self?.device.peripheralState.description
-                }
-            },
+            if let cell = self?.cellForRow(.connection) {
+                cell.detailTextLabel?.text = self?.device.peripheralState.description
+            }
+        },
             center.addObserver(forName: .DeviceRSSIDidChange, object: device, queue: mainQueue) { [weak self] (note) -> Void in
-                self?.bleRSSI = note.userInfo?[RileyLinkDevice.notificationRSSIKey] as? Int
-
-                if let cell = self?.cellForRow(.rssi), let formatter = self?.integerFormatter {
-                    cell.setDetailRSSI(self?.bleRSSI, formatter: formatter)
-                }
-            },
+            self?.bleRSSI = note.userInfo?[RileyLinkDevice.notificationRSSIKey] as? Int
+            
+            if let cell = self?.cellForRow(.rssi), let formatter = self?.integerFormatter {
+                cell.setDetailRSSI(self?.bleRSSI, formatter: formatter)
+            }
+        },
             center.addObserver(forName: .DeviceDidStartIdle, object: device, queue: mainQueue) { [weak self] (note) in
-                self?.updateDeviceStatus()
-            },
+            self?.updateDeviceStatus()
+        },
             center.addObserver(forName: .DeviceFW_HWChange, object: device, queue: mainQueue) { [weak self] (note) in
-                self?.updateDeviceStatus()
-            },
+            self?.updateDeviceStatus()
+        },
         ]
     }
     
@@ -432,6 +438,8 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
                     orangeAction(index: 5)
                 }
                 shakeOn = sender.isOn
+            default:
+                break
             }
         case .configureCommand:
             switch ConfigureCommandRow(rawValue: sender.index)! {
@@ -471,6 +479,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         switchView.section = indexPath.section
         
         cell.accessoryType = .none
+        cell.detailTextLabel?.text = nil
 
         switch Section(rawValue: indexPath.section)! {
         case .device:
@@ -622,7 +631,7 @@ public class RileyLinkDeviceTableViewController: UITableViewController {
         case .commands:
             switch CommandRow(rawValue: indexPath.row)! {
             case .orangePro:
-                device.manager.findDevices()
+                findDevices()
             default:
                 break
             }
