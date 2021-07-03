@@ -97,7 +97,7 @@ extension PeripheralManager {
     }
 }
 
-protocol PeripheralManagerDelegate: class {
+protocol PeripheralManagerDelegate: AnyObject {
     func peripheralManager(_ manager: PeripheralManager, didUpdateValueFor characteristic: CBCharacteristic)
     
     func peripheralManager(_ manager: PeripheralManager, didUpdateNotificationStateFor characteristic: CBCharacteristic)
@@ -170,7 +170,7 @@ extension PeripheralManager {
 
         for (serviceUUID, characteristicUUIDs) in configuration.notifyingCharacteristics {
             guard let service = peripheral.services?.itemWithUUID(serviceUUID) else {
-                throw PeripheralManagerError.unknownCharacteristic
+                continue
             }
 
             add(log: "serviceUUID: \(serviceUUID.uuidString)")
@@ -178,7 +178,7 @@ extension PeripheralManager {
             for characteristicUUID in characteristicUUIDs {
                 add(log: "characteristicUUID: \(characteristicUUID.uuidString)")
                 guard let characteristic = service.characteristics?.itemWithUUID(characteristicUUID) else {
-                    throw PeripheralManagerError.unknownCharacteristic
+                    continue
                 }
 
                 guard !characteristic.isNotifying else {
@@ -410,6 +410,14 @@ extension PeripheralManager: CBPeripheralDelegate {
 
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         commandLock.lock()
+        
+        if let error = error {
+            add(log: error.localizedDescription)
+        }
+        
+        if let value = characteristic.value {
+            add(log: value.hexadecimalString)
+        }
 
         var notifyDelegate = false
 
@@ -473,6 +481,7 @@ extension PeripheralManager: CBCentralManagerDelegate {
 extension PeripheralManager {
     
     func add(log: String) {
+        print("[log]: \(log)")
         logString += "\(Date())\n\(log)\n"
         if logString.count > 10000 {
             logString.removeFirst(1000)
