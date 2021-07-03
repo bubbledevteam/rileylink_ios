@@ -486,6 +486,7 @@ public class RileyLinkMinimedDeviceTableViewController: UITableViewController {
         let switchView = cell.switchView
         switchView.isHidden = true
         switchView.index = indexPath.row
+        switchView.section = indexPath.section
         
         cell.accessoryType = .none
         cell.detailTextLabel?.text = nil
